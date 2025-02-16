@@ -89,7 +89,7 @@
         }).addTo(map);
 
         var markersLayer = L.layerGroup().addTo(map);
-        var selectedSquawkCodes = new Set(["0000", "7500", "7600", "7700", "7777", "1200", "2000", "7000"]);
+        var selectedSquawkCodes = new Set(["0000", "7500", "7600", "7700", "7777"]); // 1200, 2000, 7000 er nu deaktiveret
 
         const squawkCodes = [
             { code: "0000", description: "Ikke-diskret kode" },
@@ -106,10 +106,11 @@
             let tbody = document.getElementById("squawkTableBody");
             tbody.innerHTML = "";
             squawkCodes.forEach(s => {
+                let checked = selectedSquawkCodes.has(s.code) ? "checked" : "";
                 let row = `<tr>
                     <td>${s.code}</td>
                     <td>${s.description}</td>
-                    <td><input type="checkbox" data-code="${s.code}" checked></td>
+                    <td><input type="checkbox" data-code="${s.code}" ${checked}></td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
@@ -151,20 +152,23 @@
 
                 let emergencyDetected = false;
                 flights.forEach(f => {
+                    let flightId = f.flight ? f.flight.trim() : "Ukendt";
                     let color = ["7500", "7600", "7700", "7777", "0000"].includes(f.squawk) ? "red" : "blue";
 
                     let marker = L.circleMarker([f.lat, f.lon], { radius: 6, color }).addTo(markersLayer);
-                    marker.bindPopup(`<b>Fly ID:</b> ${f.icao24 || "Ukendt"} <br> <b>Squawk:</b> ${f.squawk || "Ukendt"}`);
+                    marker.bindPopup(`<b>Fly ID:</b> ${flightId} <br> <b>Squawk:</b> ${f.squawk || "Ukendt"}`);
 
                     document.getElementById("flightTableBody").innerHTML += `
                         <tr>
-                            <td>${f.icao24 || "Ukendt"}</td>
-                            <td>${f.type || "Ukendt"}</td>
+                            <td>${flightId}</td>
+                            <td>${f.t || "Ukendt"}</td>
                             <td>${f.alt_baro || "N/A"}</td>
                             <td>${f.gs || "N/A"}</td>
                             <td>${f.squawk || "Ukendt"}</td>
                         </tr>
                     `;
+
+                    if (["7500", "7600", "7700", "7777", "0000"].includes(f.squawk)) emergencyDetected = true;
                 });
 
                 if (emergencyDetected) showAlarm();
