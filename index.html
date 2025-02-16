@@ -95,7 +95,7 @@
         var showCivilian = false;
 
         async function getFlights() {
-            const proxyUrl = "https://corsproxy.io/?url=";  // Midlertidig offentlig proxy https://corsproxy.io/?url=https://example.com
+            const proxyUrl = "https://corsproxy.com/?url=";  // Korrekt CORS-proxy
             let apiUrl = showCivilian 
                 ? "https://api.adsb.lol/v2/civ"
                 : "https://api.adsb.lol/v2/mil";
@@ -191,6 +191,18 @@
 
         function showAlarm() { document.getElementById("alarmBanner").style.display = "block"; }
         function hideAlarm() { document.getElementById("alarmBanner").style.display = "none"; }
+
+        document.getElementById("toggleFilter").addEventListener("click", () => {
+            filterEmergency = !filterEmergency;
+            document.getElementById("filterStatus").innerText = filterEmergency ? "ON" : "OFF";
+            getFlights();
+        });
+
+        document.getElementById("toggleCivilian").addEventListener("click", () => {
+            showCivilian = !showCivilian;
+            document.getElementById("civilianStatus").innerText = showCivilian ? "ON" : "OFF";
+            getFlights();
+        });
 
         getFlights();
         setInterval(() => { getFlights(); countdown = 30; }, 30000);
