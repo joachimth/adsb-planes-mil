@@ -95,7 +95,7 @@
         var showCivilian = false;
 
         async function getFlights() {
-            const proxyUrl = "https://corsproxy.io/?";  // Midlertidig offentlig proxy
+            const proxyUrl = "https://corsproxy.io/?url=";  // Midlertidig offentlig proxy https://corsproxy.io/?url=https://example.com
             let apiUrl = showCivilian 
                 ? "https://api.adsb.lol/v2/civ"
                 : "https://api.adsb.lol/v2/mil";
