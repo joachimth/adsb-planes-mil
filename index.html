@@ -1,163 +1,57 @@
-<!DOCTYPE html>
-<html lang="da">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Militære Fly & Squawk Overvågning</title>
+async function getFlights() {
+    const proxyUrl = "https://corsproxy.io/?url=";
+    const militaryUrl = proxyUrl + encodeURIComponent("https://api.adsb.lol/v2/mil");
+    let flights = [];
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    try {
+        let response = await fetch(militaryUrl);
+        let data = await response.json();
+        let militaryFlights = data.ac.filter(f => f.lat !== undefined && f.lon !== undefined);
 
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        #map { width: 80%; height: 500px; margin: 20px auto; border: 1px solid black; }
-        #countdown { font-size: 18px; margin: 10px; }
-        button { padding: 10px 15px; font-size: 16px; margin: 10px; cursor: pointer; }
-        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
-        th, td { border: 1px solid black; padding: 8px; text-align: center; }
-        th { background-color: #f4f4f4; }
+        flights = flights.concat(militaryFlights);
 
-        /* Alarm */
-        #alarmBanner {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 15px;
-            font-size: 20px;
-            font-weight: bold;
-            background: red;
-            color: white;
-            text-align: center;
-            z-index: 1000;
-            animation: blink 1s infinite;
-            cursor: pointer;
+        for (let squawk of selectedSquawkCodes) {
+            let squawkUrl = proxyUrl + encodeURIComponent(`https://api.adsb.lol/v2/squawk/${squawk}`);
+            let squawkResponse = await fetch(squawkUrl);
+            let squawkData = await squawkResponse.json();
+            let squawkFlights = squawkData.ac.filter(f => f.lat !== undefined && f.lon !== undefined);
+
+            flights = flights.concat(squawkFlights);
         }
 
-        @keyframes blink {
-            0% { background: red; }
-            50% { background: darkred; }
-            100% { background: red; }
-        }
-    </style>
-</head>
-<body>
+        markersLayer.clearLayers();
+        document.getElementById("flightTableBody").innerHTML = "";
 
-    <div id="alarmBanner" onclick="hideAlarm()">🚨 NØD-SQUAWK DETEKTERET! KLIK FOR AT SKJULE 🚨</div>
-
-    <h1>Militære Fly & Squawk Overvågning</h1>
-    <p id="countdown">Opdatering om: <span id="timer">30</span> sek.</p>
-
-    <!-- Squawk-kode tabel -->
-    <h2>Filtrer efter Squawk-koder</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Squawk-kode</th>
-                <th>Beskrivelse</th>
-                <th>Inkluder?</th>
-            </tr>
-        </thead>
-        <tbody id="squawkTableBody"></tbody>
-    </table>
-
-    <div id="map"></div>
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-
-    <script>
-        var map = L.map('map').setView([55, 10], 6); // Centreret over Danmark
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        var markersLayer = L.layerGroup().addTo(map);
-        var selectedSquawkCodes = new Set(["0000", "7500", "7600", "7700", "7777", "1200", "2000", "7000"]);
-
-        // Squawk-koder og deres beskrivelser
-        const squawkCodes = [
-            { code: "0000", description: "Ikke-diskret kode" },
-            { code: "7500", description: "Kapring" },
-            { code: "7600", description: "Radiokommunikationssvigt" },
-            { code: "7700", description: "Generel nødsituation" },
-            { code: "7777", description: "Militære afskæringsoperationer" },
-            { code: "1200", description: "VFR - Privatfly (USA)" },
-            { code: "2000", description: "IFR - Kommercielle fly" },
-            { code: "7000", description: "VFR - Privatfly (Europa)" }
-        ];
-
-        function generateSquawkTable() {
-            let tbody = document.getElementById("squawkTableBody");
-            tbody.innerHTML = "";
-            squawkCodes.forEach(s => {
-                let row = `<tr>
-                    <td>${s.code}</td>
-                    <td>${s.description}</td>
-                    <td><input type="checkbox" data-code="${s.code}" checked></td>
-                </tr>`;
-                tbody.innerHTML += row;
-            });
-
-            document.querySelectorAll("#squawkTableBody input").forEach(input => {
-                input.addEventListener("change", (e) => {
-                    let code = e.target.dataset.code;
-                    if (e.target.checked) {
-                        selectedSquawkCodes.add(code);
-                    } else {
-                        selectedSquawkCodes.delete(code);
-                    }
-                    getFlights();
-                });
-            });
-        }
-
-        async function getFlights() {
-            const proxyUrl = "https://corsproxy.io/?url=";
-            const militaryUrl = proxyUrl + encodeURIComponent("https://api.adsb.lol/v2/mil");
-
-            try {
-                let response = await fetch(militaryUrl);
-                let data = await response.json();
-                let flights = data.ac.filter(f => f.lat && f.lon);
-
-                // Hent fly med specifikke squawk-koder
-                for (let squawk of selectedSquawkCodes) {
-                    let squawkUrl = proxyUrl + encodeURIComponent(`https://api.adsb.lol/v2/squawk/${squawk}`);
-                    let squawkResponse = await fetch(squawkUrl);
-                    let squawkData = await squawkResponse.json();
-                    flights = flights.concat(squawkData.ac);
-                }
-
-                markersLayer.clearLayers();
-                let emergencyDetected = false;
-
-                flights.forEach(f => {
-                    let color = "blue";
-                    if (["7500", "7600", "7700", "7777", "0000"].includes(f.squawk)) {
-                        color = "red";
-                        emergencyDetected = true;
-                    }
-
-                    let marker = L.circleMarker([f.lat, f.lon], { radius: 6, color }).addTo(markersLayer);
-                    marker.bindPopup(`<b>Fly ID:</b> ${f.icao24} <br> <b>Squawk:</b> ${f.squawk}`);
-                });
-
-                if (emergencyDetected) showAlarm();
-                else hideAlarm();
-            } catch (error) {
-                console.error("Fejl ved hentning af data:", error);
+        let emergencyDetected = false;
+        flights.forEach(f => {
+            if (f.lat === undefined || f.lon === undefined) {
+                console.warn(`Fly mangler koordinater og springes over:`, f);
+                return; // Spring flyet over, hvis det mangler koordinater
             }
-        }
 
-        function showAlarm() { document.getElementById("alarmBanner").style.display = "block"; }
-        function hideAlarm() { document.getElementById("alarmBanner").style.display = "none"; }
+            let color = "blue";
+            if (["7500", "7600", "7700", "7777", "0000"].includes(f.squawk)) {
+                color = "red";
+                emergencyDetected = true;
+            }
 
-        generateSquawkTable();
-        getFlights();
-        setInterval(getFlights, 30000);
-    </script>
+            let marker = L.circleMarker([f.lat, f.lon], { radius: 6, color }).addTo(markersLayer);
+            marker.bindPopup(`<b>Fly ID:</b> ${f.icao24 || "Ukendt"} <br> <b>Squawk:</b> ${f.squawk || "Ukendt"}`);
 
-</body>
-</html>
+            document.getElementById("flightTableBody").innerHTML += `
+                <tr>
+                    <td>${f.icao24 || "Ukendt"}</td>
+                    <td>${f.type || "Ukendt"}</td>
+                    <td>${f.alt_baro || "N/A"}</td>
+                    <td>${f.gs || "N/A"}</td>
+                    <td>${f.squawk || "Ukendt"}</td>
+                </tr>
+            `;
+        });
+
+        if (emergencyDetected) showAlarm();
+        else hideAlarm();
+    } catch (error) {
+        console.error("Fejl ved hentning af data:", error);
+    }
+}
