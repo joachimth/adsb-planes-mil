@@ -1,0 +1,10 @@
+[
+    { "code": "0000", "description": "Ikke-diskret kode (bruges sjældent i Europa)" },
+    { "code": "7500", "description": "Kapring – Flyet er under en kapringssituation" },
+    { "code": "7600", "description": "Radiokommunikationssvigt – Ingen radiokontakt" },
+    { "code": "7700", "description": "Generel nødsituation – Flyet er i en nødsituation" },
+    { "code": "7777", "description": "Militære afskæringsoperationer" },
+    { "code": "1200", "description": "VFR – Standard privatfly i USA (deaktiveret som standard)" },
+    { "code": "2000", "description": "IFR – Standard for nye fly under IFR (deaktiveret som standard)" },
+    { "code": "7000", "description": "VFR – Standard privatfly i Europa (deaktiveret som standard)" }
+]
