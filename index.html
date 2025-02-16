@@ -95,12 +95,15 @@
         var showCivilian = false;
 
         async function getFlights() {
+            const proxyUrl = "https://corsproxy.io/?";  // Midlertidig offentlig proxy
             let apiUrl = showCivilian 
-                ? "https://api.adsb.lol/v2/aircraft"
+                ? "https://api.adsb.lol/v2/civ"
                 : "https://api.adsb.lol/v2/mil";
 
+            const finalUrl = proxyUrl + encodeURIComponent(apiUrl);
+
             try {
-                let response = await fetch(apiUrl);
+                let response = await fetch(finalUrl);
                 let data = await response.json();
 
                 let flights = data.ac.filter(flight => 
@@ -191,7 +194,6 @@
 
         getFlights();
         setInterval(() => { getFlights(); countdown = 30; }, 30000);
-        setInterval(() => { if (countdown > 0) { countdown--; document.getElementById("timer").innerText = countdown; } }, 1000);
     </script>
 
 </body>
