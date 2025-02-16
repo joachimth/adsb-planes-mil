@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Militære & Civile Fly Tracker (ADSB.lol)</title>
+    <title>Militære Fly & Squawk Overvågning</title>
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
@@ -13,8 +13,11 @@
         #map { width: 80%; height: 500px; margin: 20px auto; border: 1px solid black; }
         #countdown { font-size: 18px; margin: 10px; }
         button { padding: 10px 15px; font-size: 16px; margin: 10px; cursor: pointer; }
-        
-        /* Visuel alarm-styling */
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        th { background-color: #f4f4f4; }
+
+        /* Alarm */
         #alarmBanner {
             display: none;
             position: fixed;
@@ -37,47 +40,29 @@
             50% { background: darkred; }
             100% { background: red; }
         }
-
-        /* Tabel styling */
-        table {
-            width: 80%;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: center;
-        }
-        th {
-            background-color: #f4f4f4;
-        }
     </style>
 </head>
 <body>
 
     <div id="alarmBanner" onclick="hideAlarm()">🚨 NØD-SQUAWK DETEKTERET! KLIK FOR AT SKJULE 🚨</div>
 
-    <h1>Militære & Civile Fly Tracker (ADSB.lol)</h1>
+    <h1>Militære Fly & Squawk Overvågning</h1>
     <p id="countdown">Opdatering om: <span id="timer">30</span> sek.</p>
-    <button id="toggleFilter">Filtrér kun nød-squawk: <span id="filterStatus">OFF</span></button>
-    <button id="toggleCivilian">Vis civile fly: <span id="civilianStatus">OFF</span></button>
-    <div id="map"></div>
 
-    <!-- Tabel til flyoversigt -->
-    <h2>Synlige Fly</h2>
+    <!-- Squawk-kode tabel -->
+    <h2>Filtrer efter Squawk-koder</h2>
     <table>
         <thead>
             <tr>
-                <th>Fly ID</th>
-                <th>Type</th>
-                <th>Højde (ft)</th>
-                <th>Hastighed (knots)</th>
-                <th>Squawk</th>
+                <th>Squawk-kode</th>
+                <th>Beskrivelse</th>
+                <th>Inkluder?</th>
             </tr>
         </thead>
-        <tbody id="flightTableBody"></tbody>
+        <tbody id="squawkTableBody"></tbody>
     </table>
+
+    <div id="map"></div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
@@ -89,123 +74,80 @@
         }).addTo(map);
 
         var markersLayer = L.layerGroup().addTo(map);
-        var flightPaths = {}; 
-        var countdown = 30;
-        var filterEmergency = false;
-        var showCivilian = false;
+        var selectedSquawkCodes = new Set(["0000", "7500", "7600", "7700", "7777", "1200", "2000", "7000"]);
+
+        // Squawk-koder og deres beskrivelser
+        const squawkCodes = [
+            { code: "0000", description: "Ikke-diskret kode" },
+            { code: "7500", description: "Kapring" },
+            { code: "7600", description: "Radiokommunikationssvigt" },
+            { code: "7700", description: "Generel nødsituation" },
+            { code: "7777", description: "Militære afskæringsoperationer" },
+            { code: "1200", description: "VFR - Privatfly (USA)" },
+            { code: "2000", description: "IFR - Kommercielle fly" },
+            { code: "7000", description: "VFR - Privatfly (Europa)" }
+        ];
+
+        // Opbyg squawk-tabel
+        function generateSquawkTable() {
+            let tbody = document.getElementById("squawkTableBody");
+            tbody.innerHTML = "";
+            squawkCodes.forEach(s => {
+                let row = `<tr>
+                    <td>${s.code}</td>
+                    <td>${s.description}</td>
+                    <td><input type="checkbox" data-code="${s.code}" checked></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+
+            // Lyt efter ændringer i checkboxes
+            document.querySelectorAll("#squawkTableBody input").forEach(input => {
+                input.addEventListener("change", (e) => {
+                    let code = e.target.dataset.code;
+                    if (e.target.checked) {
+                        selectedSquawkCodes.add(code);
+                    } else {
+                        selectedSquawkCodes.delete(code);
+                    }
+                    getFlights();
+                });
+            });
+        }
 
         async function getFlights() {
-            const proxyUrl = "https://corsproxy.io/?url=";  // Korrekt CORS-proxy
-            let apiUrl = showCivilian 
-                ? "https://api.adsb.lol/v2/civ"
-                : "https://api.adsb.lol/v2/mil";
-
+            const proxyUrl = "https://corsproxy.io/?url=";
+            const apiUrl = "https://api.adsb.lol/v2/mil";
             const finalUrl = proxyUrl + encodeURIComponent(apiUrl);
 
             try {
                 let response = await fetch(finalUrl);
                 let data = await response.json();
-
-                let flights = data.ac.filter(flight => 
-                    flight.lat && flight.lon &&
-                    flight.lat > 35 && flight.lat < 70 &&
-                    flight.lon > -25 && flight.lon < 50
-                );
-
-                if (filterEmergency) {
-                    flights = flights.filter(flight => 
-                        flight.squawk === "7500" || 
-                        flight.squawk === "7600" || 
-                        flight.squawk === "7700"
-                    );
-                }
+                let flights = data.ac.filter(f => f.lat && f.lon);
 
                 markersLayer.clearLayers();
-                document.getElementById("flightTableBody").innerHTML = "";
-
                 let emergencyDetected = false;
-                let emergencyLocation = null;
 
-                flights.forEach(flight => {
-                    let flightId = flight.icao24 || "Ukendt";
-                    let squawk = flight.squawk || "Normal";
-                    let color = showCivilian ? "green" : "blue"; 
+                flights.forEach(f => {
+                    if (!selectedSquawkCodes.has(f.squawk)) return;
 
-                    if (squawk === "7500") color = "red";   
-                    if (squawk === "7600") color = "yellow"; 
-                    if (squawk === "7700") color = "red";   
+                    let color = f.squawk === "7500" || f.squawk === "7700" ? "red" : "blue";
 
-                    if (squawk === "7500" || squawk === "7600" || squawk === "7700") {
-                        emergencyDetected = true;
-                        emergencyLocation = [flight.lat, flight.lon];
-                    }
-
-                    if (!flightPaths[flightId]) {
-                        flightPaths[flightId] = [];
-                    }
-                    flightPaths[flightId].push([flight.lat, flight.lon]);
-
-                    if (flightPaths[flightId].length > 10) {
-                        flightPaths[flightId].shift();
-                    }
-
-                    L.polyline(flightPaths[flightId], { color: color }).addTo(markersLayer);
-
-                    let marker = L.circleMarker([flight.lat, flight.lon], {
-                        radius: 6,
-                        color: color,
-                        fillColor: color,
-                        fillOpacity: 0.8
-                    }).addTo(markersLayer);
-
-                    marker.bindPopup(`
-                        <b>Fly ID:</b> ${flightId}<br>
-                        <b>Type:</b> ${flight.type || "Ukendt"}<br>
-                        <b>Højde:</b> ${flight.alt_baro || "N/A"} ft<br>
-                        <b>Hastighed:</b> ${flight.gs || "N/A"} knots<br>
-                        <b>Squawk:</b> <span style="color: ${color}; font-weight: bold;">${squawk}</span>
-                    `);
-
-                    document.getElementById("flightTableBody").innerHTML += `
-                        <tr>
-                            <td>${flightId}</td>
-                            <td>${flight.type || "Ukendt"}</td>
-                            <td>${flight.alt_baro || "N/A"}</td>
-                            <td>${flight.gs || "N/A"}</td>
-                            <td>${squawk}</td>
-                        </tr>
-                    `;
+                    let marker = L.circleMarker([f.lat, f.lon], { radius: 6, color }).addTo(markersLayer);
+                    marker.bindPopup(`<b>Fly ID:</b> ${f.icao24} <br> <b>Squawk:</b> ${f.squawk}`);
+                    if (color === "red") emergencyDetected = true;
                 });
 
-                if (emergencyDetected && emergencyLocation) {
-                    showAlarm();
-                    map.setView(emergencyLocation, 8);
-                } else {
-                    hideAlarm();
-                }
-
+                if (emergencyDetected) showAlarm();
+                else hideAlarm();
             } catch (error) {
                 console.error("Fejl ved hentning af data:", error);
             }
         }
 
-        function showAlarm() { document.getElementById("alarmBanner").style.display = "block"; }
-        function hideAlarm() { document.getElementById("alarmBanner").style.display = "none"; }
-
-        document.getElementById("toggleFilter").addEventListener("click", () => {
-            filterEmergency = !filterEmergency;
-            document.getElementById("filterStatus").innerText = filterEmergency ? "ON" : "OFF";
-            getFlights();
-        });
-
-        document.getElementById("toggleCivilian").addEventListener("click", () => {
-            showCivilian = !showCivilian;
-            document.getElementById("civilianStatus").innerText = showCivilian ? "ON" : "OFF";
-            getFlights();
-        });
-
+        generateSquawkTable();
         getFlights();
-        setInterval(() => { getFlights(); countdown = 30; }, 30000);
+        setInterval(getFlights, 30000);
     </script>
 
 </body>
