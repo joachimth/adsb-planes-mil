@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAPI Checker - ADSB.lol</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        h1 { font-size: 22px; }
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        th { background-color: #f4f4f4; }
+        .highlight { background-color: lightyellow; }
+    </style>
+</head>
+<body>
+
+    <h1>🔎 OpenAPI Checker - ADSB.lol</h1>
+    <p>Sammenligner dine brugerindstillinger med OpenAPI-data.</p>
+
+    <h2>Dine nuværende felter</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Feltnavn</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="currentFieldsTable"></tbody>
+    </table>
+
+    <h2>Mulige ekstra felter</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Feltnavn</th>
+                <th>Beskrivelse</th>
+                <th>Tilføj?</th>
+            </tr>
+        </thead>
+        <tbody id="missingFieldsTable"></tbody>
+    </table>
+
+    <script>
+        const proxyUrl = "https://corsproxy.io/?url=";
+        const apiUrl = "https://api.adsb.lol/openapi.json";
+        const requestUrl = proxyUrl + encodeURIComponent(apiUrl);
+        
+        let userPreferences;
+        let availableFields = [];
+
+        async function fetchOpenAPI() {
+            try {
+                let response = await fetch(requestUrl);
+                let data = await response.json();
+                availableFields = Object.keys(data.components.schemas.FlightData.properties);
+                console.log("✅ OpenAPI hentet: ", availableFields);
+            } catch (error) {
+                console.error("❌ Fejl ved hentning af openapi.json:", error);
+            }
+        }
+
+        async function loadConfig() {
+            let userPref = await fetch("user_preferences.json").then(res => res.json());
+            userPreferences = userPref;
+            await fetchOpenAPI();
+
+            compareFields();
+        }
+
+        function compareFields() {
+            let currentFieldsTable = document.getElementById("currentFieldsTable");
+            let missingFieldsTable = document.getElementById("missingFieldsTable");
+
+            currentFieldsTable.innerHTML = "";
+            missingFieldsTable.innerHTML = "";
+
+            let userFields = new Set(userPreferences.display_fields);
+            let missingFields = availableFields.filter(field => !userFields.has(field));
+
+            // Vis nuværende felter
+            userPreferences.display_fields.forEach(field => {
+                let row = `<tr><td>${field}</td><td style="color:green;">✅ I brug</td></tr>`;
+                currentFieldsTable.innerHTML += row;
+            });
+
+            // Vis felter som mangler
+            missingFields.forEach(field => {
+                let row = `<tr class="highlight">
+                    <td>${field}</td>
+                    <td>🚀 Ikke inkluderet</td>
+                    <td><button onclick="addField('${field}')">Tilføj</button></td>
+                </tr>`;
+                missingFieldsTable.innerHTML += row;
+            });
+        }
+
+        function addField(field) {
+            if (!userPreferences.display_fields.includes(field)) {
+                userPreferences.display_fields.push(field);
+                alert(`✅ ${field} er tilføjet til dine indstillinger!`);
+                compareFields();
+            }
+        }
+
+        loadConfig();
+    </script>
+
+</body>
+</html>
