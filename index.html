@@ -4,128 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Militære Fly & Squawk Overvågning</title>
-
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        #map { width: 80%; height: 500px; margin: 20px auto; border: 1px solid black; }
-        #countdown { font-size: 18px; margin: 10px; }
-        button { padding: 10px 15px; font-size: 16px; margin: 10px; cursor: pointer; }
-        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
-        th, td { border: 1px solid black; padding: 8px; text-align: center; }
-        th { background-color: #f4f4f4; }
-
-        /* Alarm */
-        #alarmBanner {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 15px;
-            font-size: 20px;
-            font-weight: bold;
-            background: red;
-            color: white;
-            text-align: center;
-            z-index: 1000;
-            animation: blink 1s infinite;
-            cursor: pointer;
-        }
-
-        @keyframes blink {
-            0% { background: red; }
-            50% { background: darkred; }
-            100% { background: red; }
-        }
-    </style>
 </head>
 <body>
 
-    <div id="alarmBanner" onclick="hideAlarm()">🚨 NØD-SQUAWK DETEKTERET! KLIK FOR AT SKJULE 🚨</div>
+    <div id="alarmBanner" style="display: none; background: red; color: white; padding: 15px; font-size: 20px; text-align: center;">🚨 NØD-SQUAWK DETEKTERET! 🚨</div>
 
     <h1>Militære Fly & Squawk Overvågning</h1>
     <p id="countdown">Opdatering om: <span id="timer">30</span> sek.</p>
 
-    <!-- Squawk-kode tabel -->
-    <h2>Filtrer efter Squawk-koder (gælder kun ikke-militære fly)</h2>
-    <table>
+    <h2>Filtrer efter Squawk-koder</h2>
+    <table id="squawkTable">
         <thead>
-            <tr>
-                <th>Squawk-kode</th>
-                <th>Beskrivelse</th>
-                <th>Inkluder?</th>
-            </tr>
+            <tr><th>Kode</th><th>Beskrivelse</th><th>Inkluder?</th></tr>
         </thead>
         <tbody id="squawkTableBody"></tbody>
     </table>
 
-    <div id="map"></div>
+    <div id="map" style="width: 80%; height: 500px; margin: 20px auto; display: none;"></div>
 
-    <!-- Flyoversigt tabel -->
     <h2>Aktuelle Fly</h2>
-    <table>
+    <table id="flightTable">
         <thead>
-            <tr>
-                <th>Fly ID</th>
-                <th>Type</th>
-                <th>Højde (ft)</th>
-                <th>Hastighed (knots)</th>
-                <th>Squawk</th>
-            </tr>
+            <tr id="flightTableHead"></tr>
         </thead>
         <tbody id="flightTableBody"></tbody>
     </table>
 
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-
     <script>
-        var map = L.map('map').setView([55, 10], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        let userPreferences, emergencySquawks;
+        let selectedSquawkCodes = new Set();
 
-        var markersLayer = L.layerGroup().addTo(map);
-        var selectedSquawkCodes = new Set(["0000", "7500", "7600", "7700", "7777"]); // 1200, 2000, 7000 er nu deaktiveret
+        async function loadConfig() {
+            let [userPref, squawkList] = await Promise.all([
+                fetch("user_preferences.json").then(res => res.json()),
+                fetch("squawk_codes.json").then(res => res.json())
+            ]);
 
-        const squawkCodes = [
-            { code: "0000", description: "Ikke-diskret kode" },
-            { code: "7500", description: "Kapring" },
-            { code: "7600", description: "Radiokommunikationssvigt" },
-            { code: "7700", description: "Generel nødsituation" },
-            { code: "7777", description: "Militære afskæringsoperationer" },
-            { code: "1200", description: "VFR - Privatfly (USA)" },
-            { code: "2000", description: "IFR - Kommercielle fly" },
-            { code: "7000", description: "VFR - Privatfly (Europa)" }
-        ];
+            userPreferences = userPref;
+            emergencySquawks = new Set(userPref.emergency_squawks);
+            selectedSquawkCodes = new Set(userPref.default_active_squawks);
 
-        function generateSquawkTable() {
+            if (userPreferences.map.enabled) {
+                document.getElementById("map").style.display = "block";
+                initMap(userPreferences.map.center, userPreferences.map.zoom);
+            }
+            if (!userPreferences.tables.enabled) {
+                document.getElementById("flightTable").style.display = "none";
+            }
+
+            generateSquawkTable(squawkList);
+            generateFlightTableHeaders(userPreferences.display_fields);
+            getFlights();
+            setInterval(getFlights, 30000);
+        }
+
+        function initMap(center, zoom) {
+            window.map = L.map('map').setView(center, zoom);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+        }
+
+        function generateSquawkTable(squawkList) {
             let tbody = document.getElementById("squawkTableBody");
             tbody.innerHTML = "";
-            squawkCodes.forEach(s => {
+            squawkList.forEach(s => {
                 let checked = selectedSquawkCodes.has(s.code) ? "checked" : "";
-                let row = `<tr>
-                    <td>${s.code}</td>
-                    <td>${s.description}</td>
-                    <td><input type="checkbox" data-code="${s.code}" ${checked}></td>
-                </tr>`;
+                let row = `<tr><td>${s.code}</td><td>${s.description}</td>
+                <td><input type="checkbox" data-code="${s.code}" ${checked}></td></tr>`;
                 tbody.innerHTML += row;
             });
 
             document.querySelectorAll("#squawkTableBody input").forEach(input => {
                 input.addEventListener("change", (e) => {
                     let code = e.target.dataset.code;
-                    if (e.target.checked) {
-                        selectedSquawkCodes.add(code);
-                    } else {
-                        selectedSquawkCodes.delete(code);
-                    }
+                    if (e.target.checked) selectedSquawkCodes.add(code);
+                    else selectedSquawkCodes.delete(code);
                     getFlights();
                 });
             });
+        }
+
+        function generateFlightTableHeaders(fields) {
+            let headRow = document.getElementById("flightTableHead");
+            headRow.innerHTML = fields.map(f => `<th>${f.toUpperCase()}</th>`).join("");
         }
 
         async function getFlights() {
@@ -136,51 +100,37 @@
             try {
                 let response = await fetch(militaryUrl);
                 let data = await response.json();
-                flights = data.ac.filter(f => f.lat !== undefined && f.lon !== undefined);
+                flights = data.ac.filter(f => f.lat && f.lon);
 
                 for (let squawk of selectedSquawkCodes) {
                     let squawkUrl = proxyUrl + encodeURIComponent(`https://api.adsb.lol/v2/squawk/${squawk}`);
                     let squawkResponse = await fetch(squawkUrl);
                     let squawkData = await squawkResponse.json();
-                    let squawkFlights = squawkData.ac.filter(f => f.lat !== undefined && f.lon !== undefined);
-
-                    flights = flights.concat(squawkFlights);
+                    flights = flights.concat(squawkData.ac.filter(f => f.lat && f.lon));
                 }
 
-                markersLayer.clearLayers();
-                document.getElementById("flightTableBody").innerHTML = "";
-
-                let emergencyDetected = false;
-                flights.forEach(f => {
-                    let flightId = f.flight ? f.flight.trim() : "Ukendt";
-                    let color = ["7500", "7600", "7700", "7777", "0000"].includes(f.squawk) ? "red" : "blue";
-
-                    let marker = L.circleMarker([f.lat, f.lon], { radius: 6, color }).addTo(markersLayer);
-                    marker.bindPopup(`<b>Fly ID:</b> ${flightId} <br> <b>Squawk:</b> ${f.squawk || "Ukendt"}`);
-
-                    document.getElementById("flightTableBody").innerHTML += `
-                        <tr>
-                            <td>${flightId}</td>
-                            <td>${f.t || "Ukendt"}</td>
-                            <td>${f.alt_baro || "N/A"}</td>
-                            <td>${f.gs || "N/A"}</td>
-                            <td>${f.squawk || "Ukendt"}</td>
-                        </tr>
-                    `;
-
-                    if (["7500", "7600", "7700", "7777", "0000"].includes(f.squawk)) emergencyDetected = true;
-                });
-
-                if (emergencyDetected) showAlarm();
-                else hideAlarm();
+                updateFlightTable(flights);
             } catch (error) {
                 console.error("Fejl ved hentning af data:", error);
             }
         }
 
-        generateSquawkTable();
-        getFlights();
-        setInterval(getFlights, 30000);
+        function updateFlightTable(flights) {
+            let tbody = document.getElementById("flightTableBody");
+            tbody.innerHTML = "";
+            let emergencyDetected = false;
+
+            flights.forEach(f => {
+                if (emergencySquawks.has(f.squawk)) emergencyDetected = true;
+
+                let row = `<tr>${userPreferences.display_fields.map(field => `<td>${f[field] || "N/A"}</td>`).join("")}</tr>`;
+                tbody.innerHTML += row;
+            });
+
+            document.getElementById("alarmBanner").style.display = emergencyDetected ? "block" : "none";
+        }
+
+        loadConfig();
     </script>
 
 </body>
