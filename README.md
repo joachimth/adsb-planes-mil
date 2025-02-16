@@ -10,6 +10,7 @@ Denne hjemmeside giver dig mulighed for at følge **militære og civile fly** ov
 ✅ **Tydelig rød advarsel ved nød-squawk**
 ✅ **Tabel med oversigt over synlige fly**
 ✅ **Bruger CORS-proxy: [corsproxy.io](https://corsproxy.io/)**
+✅ **Dynamisk opdatering af felter via OpenAPI**
 
 ## Sådan bruger du siden
 1. **Siden opdaterer sig selv** automatisk hver 30. sekund.
@@ -26,6 +27,9 @@ Denne hjemmeside giver dig mulighed for at følge **militære og civile fly** ov
 
 🔹 **Knapperne til filtrering virker ikke?**
    - Hvis du oplever problemer, prøv at genindlæse siden.
+
+## Opdater felter med OpenAPI
+Vil du se hvilke felter, der er tilgængelige, men ikke inkluderet? [Tjek OpenAPI Checker](openapi_checker.html)
 
 ## Feedback & Support
 Har du forslag til forbedringer eller oplever du fejl? Opret en issue her på GitHub! 🙌
