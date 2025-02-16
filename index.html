@@ -37,6 +37,21 @@
             50% { background: darkred; }
             100% { background: red; }
         }
+
+        /* Tabel styling */
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
     </style>
 </head>
 <body>
@@ -49,11 +64,26 @@
     <button id="toggleCivilian">Vis civile fly: <span id="civilianStatus">OFF</span></button>
     <div id="map"></div>
 
+    <!-- Tabel til flyoversigt -->
+    <h2>Synlige Fly</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Fly ID</th>
+                <th>Type</th>
+                <th>Højde (ft)</th>
+                <th>Hastighed (knots)</th>
+                <th>Squawk</th>
+            </tr>
+        </thead>
+        <tbody id="flightTableBody"></tbody>
+    </table>
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 
     <script>
-        var map = L.map('map').setView([50, 10], 5); // Centreret over Europa
+        var map = L.map('map').setView([55, 10], 6); // Centreret over Danmark
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
@@ -62,13 +92,13 @@
         var flightPaths = {}; 
         var countdown = 30;
         var filterEmergency = false;
-        var showCivilian = false; // Standard: Vis kun militære fly
+        var showCivilian = false;
 
         async function getFlights() {
             let apiUrl = showCivilian 
-                ? "https://api.adsb.lol/v2/aircraft"  // Henter alle fly
-                : "https://api.adsb.lol/v2/military"; // Henter kun militære fly
-            
+                ? "https://api.adsb.lol/v2/aircraft"
+                : "https://api.adsb.lol/v2/mil";
+
             try {
                 let response = await fetch(apiUrl);
                 let data = await response.json();
@@ -88,8 +118,10 @@
                 }
 
                 markersLayer.clearLayers();
+                document.getElementById("flightTableBody").innerHTML = "";
 
                 let emergencyDetected = false;
+                let emergencyLocation = null;
 
                 flights.forEach(flight => {
                     let flightId = flight.icao24 || "Ukendt";
@@ -102,6 +134,7 @@
 
                     if (squawk === "7500" || squawk === "7600" || squawk === "7700") {
                         emergencyDetected = true;
+                        emergencyLocation = [flight.lat, flight.lon];
                     }
 
                     if (!flightPaths[flightId]) {
@@ -129,10 +162,21 @@
                         <b>Hastighed:</b> ${flight.gs || "N/A"} knots<br>
                         <b>Squawk:</b> <span style="color: ${color}; font-weight: bold;">${squawk}</span>
                     `);
+
+                    document.getElementById("flightTableBody").innerHTML += `
+                        <tr>
+                            <td>${flightId}</td>
+                            <td>${flight.type || "Ukendt"}</td>
+                            <td>${flight.alt_baro || "N/A"}</td>
+                            <td>${flight.gs || "N/A"}</td>
+                            <td>${squawk}</td>
+                        </tr>
+                    `;
                 });
 
-                if (emergencyDetected) {
+                if (emergencyDetected && emergencyLocation) {
                     showAlarm();
+                    map.setView(emergencyLocation, 8);
                 } else {
                     hideAlarm();
                 }
@@ -142,30 +186,12 @@
             }
         }
 
-        function showAlarm() {
-            document.getElementById("alarmBanner").style.display = "block";
-        }
-
-        function hideAlarm() {
-            document.getElementById("alarmBanner").style.display = "none";
-        }
+        function showAlarm() { document.getElementById("alarmBanner").style.display = "block"; }
+        function hideAlarm() { document.getElementById("alarmBanner").style.display = "none"; }
 
         getFlights();
         setInterval(() => { getFlights(); countdown = 30; }, 30000);
         setInterval(() => { if (countdown > 0) { countdown--; document.getElementById("timer").innerText = countdown; } }, 1000);
-
-        document.getElementById("toggleFilter").addEventListener("click", () => {
-            filterEmergency = !filterEmergency;
-            document.getElementById("filterStatus").innerText = filterEmergency ? "ON" : "OFF";
-            getFlights();
-        });
-
-        document.getElementById("toggleCivilian").addEventListener("click", () => {
-            showCivilian = !showCivilian;
-            document.getElementById("civilianStatus").innerText = showCivilian ? "ON" : "OFF";
-            getFlights();
-        });
-
     </script>
 
 </body>
