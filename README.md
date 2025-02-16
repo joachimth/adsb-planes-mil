@@ -17,27 +17,6 @@ Dette projekt er en webapplikation, der viser militære fly over Europa i realti
 - **ADSB.lol API** til flydata
 - **GitHub Pages** til hosting
 
-## Installation & Opsætning
-### 1. Opret et GitHub Repository
-- Gå til [GitHub](https://github.com/) og log ind.
-- Klik **New Repository**.
-- Navngiv det (f.eks. `adsb-military-tracker`).
-- Sæt det til **Public**.
-- Klik **Create repository**.
-
-### 2. Upload Kode
-- Download eller kopier **index.html** fra dette repo.
-- Upload den til dit GitHub repository.
-- Klik **Commit changes**.
-
-### 3. Aktivér GitHub Pages
-- Gå til **Settings > Pages**.
-- Under **Branch**, vælg `main` og klik **Save**.
-- Efter få sekunder vil GitHub give dig en **live URL**:
-  ```
-  https://DIT-BRUGERNAVN.github.io/adsb-military-tracker/
-  ```
-
 ## Brugervejledning
 1. **Åbn websiden** via GitHub Pages linket.
 2. **Siden opdateres automatisk** hver 30. sekund.
