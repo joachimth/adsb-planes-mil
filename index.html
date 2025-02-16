@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Militære Fly Over Europa (ADSB.lol)</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #map { width: 80%; height: 500px; margin: 20px auto; border: 1px solid black; }
+        #countdown { font-size: 18px; margin: 10px; }
+        button { padding: 10px 15px; font-size: 16px; margin: 10px; cursor: pointer; }
+        
+        /* Visuel alarm-styling */
+        #alarmBanner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            background: red;
+            color: white;
+            text-align: center;
+            z-index: 1000;
+            animation: blink 1s infinite;
+            cursor: pointer;
+        }
+
+        @keyframes blink {
+            0% { background: red; }
+            50% { background: darkred; }
+            100% { background: red; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="alarmBanner" onclick="hideAlarm()">🚨 NØD-SQUAWK DETEKTERET! KLIK FOR AT SKJULE 🚨</div>
+
+    <h1>Militære Fly Over Europa (ADSB.lol)</h1>
+    <p id="countdown">Opdatering om: <span id="timer">30</span> sek.</p>
+    <button id="toggleFilter">Filtrér kun nød-squawk: <span id="filterStatus">OFF</span></button>
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+    <script>
+        var map = L.map('map').setView([50, 10], 5); // Centreret over Europa
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        var markersLayer = L.layerGroup().addTo(map);
+        var flightPaths = {}; 
+        var countdown = 30;
+        var filterEmergency = false;
+
+        async function getMilitaryFlights() {
+            const url = "https://api.adsb.lol/v2/military";
+            try {
+                let response = await fetch(url);
+                let data = await response.json();
+
+                let flights = data.ac.filter(flight => 
+                    flight.lat && flight.lon &&
+                    flight.lat > 35 && flight.lat < 70 &&
+                    flight.lon > -25 && flight.lon < 50
+                );
+
+                if (filterEmergency) {
+                    flights = flights.filter(flight => 
+                        flight.squawk === "7500" || 
+                        flight.squawk === "7600" || 
+                        flight.squawk === "7700"
+                    );
+                }
+
+                markersLayer.clearLayers();
+
+                let emergencyDetected = false;
+
+                flights.forEach(flight => {
+                    let flightId = flight.icao24 || "Ukendt";
+                    let squawk = flight.squawk || "Normal";
+                    let color = "blue"; 
+
+                    if (squawk === "7500") color = "red";   
+                    if (squawk === "7600") color = "yellow"; 
+                    if (squawk === "7700") color = "red";   
+
+                    if (squawk === "7500" || squawk === "7600" || squawk === "7700") {
+                        emergencyDetected = true;
+                    }
+
+                    if (!flightPaths[flightId]) {
+                        flightPaths[flightId] = [];
+                    }
+                    flightPaths[flightId].push([flight.lat, flight.lon]);
+
+                    if (flightPaths[flightId].length > 10) {
+                        flightPaths[flightId].shift();
+                    }
+
+                    L.polyline(flightPaths[flightId], { color: color }).addTo(markersLayer);
+
+                    let marker = L.circleMarker([flight.lat, flight.lon], {
+                        radius: 6,
+                        color: color,
+                        fillColor: color,
+                        fillOpacity: 0.8
+                    }).addTo(markersLayer);
+
+                    marker.bindPopup(`
+                        <b>Fly ID:</b> ${flightId}<br>
+                        <b>Type:</b> ${flight.type || "Ukendt"}<br>
+                        <b>Højde:</b> ${flight.alt_baro || "N/A"} ft<br>
+                        <b>Hastighed:</b> ${flight.gs || "N/A"} knots<br>
+                        <b>Squawk:</b> <span style="color: ${color}; font-weight: bold;">${squawk}</span>
+                    `);
+                });
+
+                if (emergencyDetected) {
+                    showAlarm();
+                } else {
+                    hideAlarm();
+                }
+
+            } catch (error) {
+                console.error("Fejl ved hentning af data:", error);
+            }
+        }
+
+        function showAlarm() {
+            document.getElementById("alarmBanner").style.display = "block";
+        }
+
+        function hideAlarm() {
+            document.getElementById("alarmBanner").style.display = "none";
+        }
+
+        getMilitaryFlights();
+        setInterval(() => { getMilitaryFlights(); countdown = 30; }, 30000);
+        setInterval(() => { if (countdown > 0) { countdown--; document.getElementById("timer").innerText = countdown; } }, 1000);
+
+        document.getElementById("toggleFilter").addEventListener("click", () => {
+            filterEmergency = !filterEmergency;
+            document.getElementById("filterStatus").innerText = filterEmergency ? "ON" : "OFF";
+            getMilitaryFlights();
+        });
+
+    </script>
+
+</body>
+</html>
