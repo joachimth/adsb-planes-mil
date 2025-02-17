@@ -24,13 +24,11 @@
     <script>
         function loadHTML(id, filename) {
             fetch(`https://raw.githubusercontent.com/joachimth/adsb-planes-mil/main/${filename}`)
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById(id).innerHTML = data;
-            })
-            .catch(error => console.error(`Fejl ved indlæsning af ${filename}:`, error));
-    }
-
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById(id).innerHTML = data;
+                })
+                .catch(error => console.error(`Fejl ved indlæsning af ${filename}:`, error));
         }
 
         document.addEventListener("DOMContentLoaded", () => {
