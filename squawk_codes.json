@@ -1,34 +1,29 @@
-[
-    { "code": "0000", "description": "Ikke-diskret kode; bør ikke anvendes." },
-    { "code": "0001", "description": "Højdeovervågningsenhed." },
-    { "code": "0002", "description": "Jordtranspondertest." },
-    { "code": "0003", "description": "Surrey/Sussex HEMS." },
-    { "code": "0004", "description": "Skotland: Ikke-standard flyvninger." },
-    { "code": "0006", "description": "Britisk Transportpoliti ASU." },
-    { "code": "0007", "description": "Off-shore sikkerhedsområde (OSA) conspicuity." },
-    { "code": "0021", "description": "Tyskland: VFR under 5000 fod (før 15. marts 2007)." },
-    { "code": "0022", "description": "Tyskland: VFR over 5000 fod (før 15. marts 2007)." },
-    { "code": "0025", "description": "Tyskland: Faldskærmsudspring i gang." },
-    { "code": "0033", "description": "Storbritannien: Faldskærmsudspring i gang." },
-    { "code": "0041-0057", "description": "Belgien: Tildelt til VFR-trafik under Flight Information Services (BXL FIC)." },
-    { "code": "0100", "description": "Australien: Flyvninger ved lufthavne." },
-    { "code": "0100-0400", "description": "USA: Tildelt til Service Area Operations for specifikke formål." },
-    { "code": "0100-0700", "description": "USA: Ikke-diskrete kode tildelinger i henhold til FAA Order JO 7110.65." },
-    { "code": "0500, 0600, 0700", "description": "USA: Eksterne ARTCC-undergrupper." },
-    { "code": "1000", "description": "Canada: IFR-flyvning under 18.000 fod ASL uden anden tildelt kode." },
-    { "code": "1200", "description": "USA/Canada: VFR standardkode." },
-    { "code": "1201", "description": "USA: VFR i nærheden af LAX." },
-    { "code": "1202", "description": "USA/Canada: VFR svævefly uden ATC-kontakt." },
-    { "code": "1255", "description": "USA: Brandbekæmpelsesfly uden ATC-kontakt." },
-    { "code": "1277", "description": "USA: VFR SAR-missioner for USAF eller USCG." },
-    { "code": "2000", "description": "ICAO: IFR uden for radar dækning." },
-    { "code": "7000", "description": "ICAO: VFR standardkode i Europa." },
-    { "code": "7001", "description": "Frankrig: Bruges til at identificere VFR-trafik." },
-    { "code": "7004", "description": "Storbritannien: Akrobatik og opvisning." },
-    { "code": "7400", "description": "USA/Storbritannien/Australien: UAV mistet forbindelse." },
-    { "code": "7500", "description": "ICAO: Flykapring." },
-    { "code": "7600", "description": "ICAO: Radio kommunikationssvigt." },
-    { "code": "7700", "description": "ICAO: Nødsituation." },
-    { "code": "7776", "description": "Europa: Testkode for transpondere." },
-    { "code": "7777", "description": "USA/Tyskland/Storbritannien/Belgien/Nederlandene: Ikke-diskret kode brugt af faste testtranspondere til at kontrollere radarstationers korrekthed." }
-]
+{
+    "international": [
+        { "code": "0000", "description": "Ikke-diskret kode; bør ikke anvendes." },
+        { "code": "1200", "description": "VFR standardkode (USA/Canada)." },
+        { "code": "2000", "description": "IFR uden for radar dækning (ICAO, Oceanic Airspace)." },
+        { "code": "7000", "description": "VFR standardkode i Europa." },
+        { "code": "7500", "description": "Flykapring (ICAO)." },
+        { "code": "7600", "description": "Radio kommunikationssvigt (ICAO)." },
+        { "code": "7700", "description": "Generel nødsituation (ICAO)." },
+        { "code": "7777", "description": "Militær afskæringsoperationer (US/EU/NATO)." }
+    ],
+    "national_usa": [
+        { "code": "1201", "description": "VFR i Los Angeles Special Flight Rules Area (SFRA)." },
+        { "code": "1202", "description": "VFR svævefly uden ATC-kontakt." },
+        { "code": "1203", "description": "Formation flyvning (Kun lead squawker)." },
+        { "code": "1205", "description": "Helikoptere i Los Angeles eller DC SFRA-afgang." },
+        { "code": "1255", "description": "Brandbekæmpelse i USA." },
+        { "code": "1277", "description": "Søge- og redningsoperationer (SAR) i USA." },
+        { "code": "1276", "description": "ADIZ penetration uden kommunikation." },
+        { "code": "7400", "description": "UAV mistet forbindelse." },
+        { "code": "7710-7776", "description": "Militær træning & testkoder." }
+    ],
+    "military": [
+        { "code": "4000", "description": "Militære operationer (USA/EU/NATO)." },
+        { "code": "4400-4477", "description": "Militære reserverede områder." },
+        { "code": "7401-7477", "description": "Militære øvelser & UAV-missioner." },
+        { "code": "7610-7676", "description": "Specifikke militære missioner." }
+    ]
+}
