@@ -60,13 +60,6 @@
             try {
                 let response = await fetch("squawk_codes.json");
                 let squawkData = await response.json();
-                
-                let squawkTableBody = document.getElementById("squawkTableBody");
-                if (!squawkTableBody) {
-                    console.error("🚨 Fejl: 'squawkTableBody' findes ikke i DOM'en.");
-                    return;
-                }
-
                 generateSquawkTable(squawkData);
             } catch (error) {
                 console.error("❌ Fejl ved hentning af squawk-koder:", error);
@@ -82,7 +75,12 @@
 
             squawkTableBody.innerHTML = "";
 
-            Object.values(squawkData).forEach(category => {
+            Object.keys(squawkData).forEach(categoryKey => {
+                let category = squawkData[categoryKey];
+                if (!Array.isArray(category)) {
+                    console.error(`🚨 Fejl: Kategorien '${categoryKey}' er ikke en array.`, category);
+                    return;
+                }
                 category.forEach(s => {
                     let expandedCodes = expandSquawkRange(s.code);
                     expandedCodes.forEach(code => {
@@ -94,18 +92,6 @@
                         </tr>`;
                         squawkTableBody.innerHTML += row;
                     });
-                });
-            });
-
-            document.querySelectorAll("#squawkTableBody input").forEach(input => {
-                input.addEventListener("change", (e) => {
-                    let code = e.target.dataset.code;
-                    if (e.target.checked) {
-                        selectedSquawkCodes.add(code);
-                    } else {
-                        selectedSquawkCodes.delete(code);
-                    }
-                    getFlights();
                 });
             });
         }
@@ -131,7 +117,6 @@
                     let data = await response.json();
                     flights = flights.concat(data.ac.filter(f => f.lat && f.lon));
                 }
-
                 updateFlightTable(flights);
             } catch (error) {
                 console.error("Fejl ved hentning af data:", error);
@@ -141,7 +126,6 @@
         function updateFlightTable(flights) {
             let tbody = document.getElementById("flightTableBody");
             tbody.innerHTML = "";
-
             let emergencyDetected = false;
 
             flights.forEach(f => {
@@ -153,21 +137,12 @@
                     <td>${f.squawk || "Ukendt"}</td>
                 </tr>`;
                 tbody.innerHTML += row;
-
                 if (["7500", "7600", "7700", "7777"].includes(f.squawk)) {
                     emergencyDetected = true;
                 }
             });
-
             document.getElementById("alarmBanner").style.display = emergencyDetected ? "block" : "none";
         }
-
-        // Initialize map
-        var map = L.map('map').setView([55, 10], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
     </script>
-
 </body>
 </html>
