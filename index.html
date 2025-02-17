@@ -27,14 +27,6 @@
 
     <h1>Militære & Civile Fly Tracker</h1>
 
-    <h2>Filtrer efter Squawk-koder</h2>
-    <table>
-        <thead>
-            <tr><th>Kode</th><th>Beskrivelse</th><th>Inkluder?</th></tr>
-        </thead>
-        <tbody id="squawkTableBody"></tbody>
-    </table>
-
     <div id="map"></div>
 
     <h2>Aktuelle Fly</h2>
@@ -43,6 +35,14 @@
             <tr><th>Fly ID</th><th>Type</th><th>Højde (ft)</th><th>Hastighed (knots)</th><th>Squawk</th></tr>
         </thead>
         <tbody id="flightTableBody"></tbody>
+    </table>
+
+    <h2>Filtrer efter Squawk-koder</h2>
+    <table>
+        <thead>
+            <tr><th>Kode</th><th>Beskrivelse</th><th>Inkluder?</th></tr>
+        </thead>
+        <tbody id="squawkTableBody"></tbody>
     </table>
 
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
@@ -68,11 +68,7 @@
 
         function generateSquawkTable(squawkData) {
             let squawkTableBody = document.getElementById("squawkTableBody");
-            if (!squawkTableBody) {
-                console.error("🚨 Fejl: 'squawkTableBody' kunne ikke findes.");
-                return;
-            }
-
+            if (!squawkTableBody) return;
             squawkTableBody.innerHTML = "";
 
             Object.entries(squawkData).forEach(([categoryKey, categoryValue]) => {
@@ -82,8 +78,6 @@
                     });
                 } else if (typeof categoryValue === 'object' && categoryValue !== null) {
                     addSquawkRow(categoryValue);
-                } else {
-                    console.error(`🚨 Fejl: Kategorien '${categoryKey}' har en ukendt struktur.`, categoryValue);
                 }
             });
         }
