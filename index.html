@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Militære Fly & Squawk Overvågning</title>
+    <title>Militære & Civile Fly Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
@@ -25,7 +25,7 @@
 
     <div id="alarmBanner">🚨 NØD-SQUAWK DETEKTERET! 🚨</div>
 
-    <h1>Militære Fly & Squawk Overvågning</h1>
+    <h1>Militære & Civile Fly Tracker</h1>
 
     <h2>Filtrer efter Squawk-koder</h2>
     <table>
@@ -75,24 +75,30 @@
 
             squawkTableBody.innerHTML = "";
 
-            Object.keys(squawkData).forEach(categoryKey => {
-                let category = squawkData[categoryKey];
-                if (!Array.isArray(category)) {
-                    console.error(`🚨 Fejl: Kategorien '${categoryKey}' er ikke en array.`, category);
-                    return;
-                }
-                category.forEach(s => {
-                    let expandedCodes = expandSquawkRange(s.code);
-                    expandedCodes.forEach(code => {
-                        let checked = selectedSquawkCodes.has(code) ? "checked" : "";
-                        let row = `<tr>
-                            <td>${code}</td>
-                            <td>${s.description}</td>
-                            <td><input type="checkbox" data-code="${code}" ${checked}></td>
-                        </tr>`;
-                        squawkTableBody.innerHTML += row;
+            Object.entries(squawkData).forEach(([categoryKey, categoryValue]) => {
+                if (Array.isArray(categoryValue)) {
+                    categoryValue.forEach(s => {
+                        addSquawkRow(s);
                     });
-                });
+                } else if (typeof categoryValue === 'object' && categoryValue !== null) {
+                    addSquawkRow(categoryValue);
+                } else {
+                    console.error(`🚨 Fejl: Kategorien '${categoryKey}' har en ukendt struktur.`, categoryValue);
+                }
+            });
+        }
+
+        function addSquawkRow(squawk) {
+            let squawkTableBody = document.getElementById("squawkTableBody");
+            let expandedCodes = expandSquawkRange(squawk.code);
+            expandedCodes.forEach(code => {
+                let checked = selectedSquawkCodes.has(code) ? "checked" : "";
+                let row = `<tr>
+                    <td>${code}</td>
+                    <td>${squawk.description}</td>
+                    <td><input type="checkbox" data-code="${code}" ${checked}></td>
+                </tr>`;
+                squawkTableBody.innerHTML += row;
             });
         }
 
