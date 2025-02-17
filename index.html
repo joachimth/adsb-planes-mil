@@ -1,92 +1,173 @@
-<script>
-    let selectedSquawkCodes = new Set();
-
-    async function loadSquawkCodes() {
-        try {
-            let response = await fetch("squawk_codes.json");
-            let squawkData = await response.json();
-            generateSquawkTable(squawkData);
-        } catch (error) {
-            console.error("Fejl ved hentning af squawk-koder:", error);
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Militære Fly & Squawk Overvågning</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #map { width: 80%; height: 500px; margin: 20px auto; border: 1px solid black; }
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        th { background-color: #f4f4f4; }
+        #alarmBanner {
+            display: none;
+            background: red;
+            color: white;
+            padding: 15px;
+            font-size: 20px;
+            text-align: center;
         }
-    }
+    </style>
+</head>
+<body>
 
-    function expandSquawkRange(code) {
-        if (code.includes("-")) {
-            let [start, end] = code.split("-").map(Number);
-            let expandedCodes = [];
-            for (let i = start; i <= end; i++) {
-                expandedCodes.push(i.toString().padStart(4, "0")); // Sikrer firecifrede squawk-koder
+    <div id="alarmBanner">🚨 NØD-SQUAWK DETEKTERET! 🚨</div>
+
+    <h1>Militære Fly & Squawk Overvågning</h1>
+
+    <h2>Filtrer efter Squawk-koder</h2>
+    <table>
+        <thead>
+            <tr><th>Kode</th><th>Beskrivelse</th><th>Inkluder?</th></tr>
+        </thead>
+        <tbody id="squawkTableBody"></tbody>
+    </table>
+
+    <div id="map"></div>
+
+    <h2>Aktuelle Fly</h2>
+    <table>
+        <thead>
+            <tr><th>Fly ID</th><th>Type</th><th>Højde (ft)</th><th>Hastighed (knots)</th><th>Squawk</th></tr>
+        </thead>
+        <tbody id="flightTableBody"></tbody>
+    </table>
+
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script>
+        const proxyUrl = "https://corsproxy.io/?url=";
+        let selectedSquawkCodes = new Set();
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadSquawkCodes();
+            getFlights();
+            setInterval(getFlights, 30000);
+        });
+
+        async function loadSquawkCodes() {
+            try {
+                let response = await fetch("squawk_codes.json");
+                let squawkData = await response.json();
+                
+                let squawkTableBody = document.getElementById("squawkTableBody");
+                if (!squawkTableBody) {
+                    console.error("🚨 Fejl: 'squawkTableBody' findes ikke i DOM'en.");
+                    return;
+                }
+
+                generateSquawkTable(squawkData);
+            } catch (error) {
+                console.error("❌ Fejl ved hentning af squawk-koder:", error);
             }
-            return expandedCodes;
         }
-        return [code]; // Hvis det ikke er et interval, returneres koden som en enkeltværdi
-    }
 
-    function generateSquawkTable(squawkData) {
-        let tbody = document.getElementById("squawkTableBody");
-        tbody.innerHTML = "";
-        
-        squawkData.forEach(s => {
-            let expandedCodes = expandSquawkRange(s.code);
-            
-            expandedCodes.forEach(code => {
-                let checked = selectedSquawkCodes.has(code) ? "checked" : "";
+        function generateSquawkTable(squawkData) {
+            let squawkTableBody = document.getElementById("squawkTableBody");
+            if (!squawkTableBody) {
+                console.error("🚨 Fejl: 'squawkTableBody' kunne ikke findes.");
+                return;
+            }
+
+            squawkTableBody.innerHTML = "";
+
+            Object.values(squawkData).forEach(category => {
+                category.forEach(s => {
+                    let expandedCodes = expandSquawkRange(s.code);
+                    expandedCodes.forEach(code => {
+                        let checked = selectedSquawkCodes.has(code) ? "checked" : "";
+                        let row = `<tr>
+                            <td>${code}</td>
+                            <td>${s.description}</td>
+                            <td><input type="checkbox" data-code="${code}" ${checked}></td>
+                        </tr>`;
+                        squawkTableBody.innerHTML += row;
+                    });
+                });
+            });
+
+            document.querySelectorAll("#squawkTableBody input").forEach(input => {
+                input.addEventListener("change", (e) => {
+                    let code = e.target.dataset.code;
+                    if (e.target.checked) {
+                        selectedSquawkCodes.add(code);
+                    } else {
+                        selectedSquawkCodes.delete(code);
+                    }
+                    getFlights();
+                });
+            });
+        }
+
+        function expandSquawkRange(code) {
+            if (code.includes("-")) {
+                let [start, end] = code.split("-").map(Number);
+                let expandedCodes = [];
+                for (let i = start; i <= end; i++) {
+                    expandedCodes.push(i.toString().padStart(4, "0"));
+                }
+                return expandedCodes;
+            }
+            return [code];
+        }
+
+        async function getFlights() {
+            let flights = [];
+            try {
+                for (let squawk of selectedSquawkCodes) {
+                    let squawkUrl = proxyUrl + encodeURIComponent(`https://api.adsb.lol/v2/squawk/${squawk}`);
+                    let response = await fetch(squawkUrl);
+                    let data = await response.json();
+                    flights = flights.concat(data.ac.filter(f => f.lat && f.lon));
+                }
+
+                updateFlightTable(flights);
+            } catch (error) {
+                console.error("Fejl ved hentning af data:", error);
+            }
+        }
+
+        function updateFlightTable(flights) {
+            let tbody = document.getElementById("flightTableBody");
+            tbody.innerHTML = "";
+
+            let emergencyDetected = false;
+
+            flights.forEach(f => {
                 let row = `<tr>
-                    <td>${code}</td>
-                    <td>${s.description}</td>
-                    <td><input type="checkbox" data-code="${code}" ${checked}></td>
+                    <td>${f.flight || "Ukendt"}</td>
+                    <td>${f.type || "Ukendt"}</td>
+                    <td>${f.alt_baro || "N/A"}</td>
+                    <td>${f.gs || "N/A"}</td>
+                    <td>${f.squawk || "Ukendt"}</td>
                 </tr>`;
                 tbody.innerHTML += row;
-            });
-        });
 
-        document.querySelectorAll("#squawkTableBody input").forEach(input => {
-            input.addEventListener("change", (e) => {
-                let code = e.target.dataset.code;
-                if (e.target.checked) {
-                    selectedSquawkCodes.add(code);
-                } else {
-                    selectedSquawkCodes.delete(code);
+                if (["7500", "7600", "7700", "7777"].includes(f.squawk)) {
+                    emergencyDetected = true;
                 }
-                getFlights();
             });
-        });
-    }
 
-    async function getFlights() {
-        const proxyUrl = "https://corsproxy.io/?url=";
-        let flights = [];
-
-        try {
-            for (let squawk of selectedSquawkCodes) {
-                let squawkUrl = proxyUrl + encodeURIComponent(`https://api.adsb.lol/v2/squawk/${squawk}`);
-                let response = await fetch(squawkUrl);
-                let data = await response.json();
-                flights = flights.concat(data.ac.filter(f => f.lat && f.lon));
-            }
-
-            updateFlightTable(flights);
-        } catch (error) {
-            console.error("Fejl ved hentning af data:", error);
+            document.getElementById("alarmBanner").style.display = emergencyDetected ? "block" : "none";
         }
-    }
 
-    function updateFlightTable(flights) {
-        let tbody = document.getElementById("flightTableBody");
-        tbody.innerHTML = "";
+        // Initialize map
+        var map = L.map('map').setView([55, 10], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+    </script>
 
-        flights.forEach(f => {
-            let row = `<tr>
-                <td>${f.flight || "Ukendt"}</td>
-                <td>${f.type || "Ukendt"}</td>
-                <td>${f.alt_baro || "N/A"}</td>
-                <td>${f.gs || "N/A"}</td>
-                <td>${f.squawk || "Ukendt"}</td>
-            </tr>`;
-            tbody.innerHTML += row;
-        });
-    }
-
-    loadSquawkCodes();
-</script>
+</body>
+</html>
