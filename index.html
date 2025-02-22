@@ -22,6 +22,29 @@
     <div id="footer"></div>
     
     <script>
+        let globalFlightData = [];
+
+        async function fetchFlightData() {
+            const proxyUrl = "https://corsproxy.io/?url=";
+            let squawkUrl = proxyUrl + encodeURIComponent("https://api.adsb.lol/v2/mil");
+
+            try {
+                let response = await fetch(squawkUrl);
+                let data = await response.json();
+                globalFlightData = data.ac || []; // Gemmer data globalt
+                console.log("Flydata hentet:", globalFlightData);
+                updateAllSections();
+            } catch (error) {
+                console.error("Fejl ved hentning af flydata:", error);
+            }
+        }
+
+        function updateAllSections() {
+            if (typeof updateFlightTable === "function") {
+                updateFlightTable(globalFlightData);
+            }
+        }
+
         function loadHTML(id, filename) {
             fetch(`https://raw.githubusercontent.com/joachimth/adsb-planes-mil/main/${filename}`)
                 .then(response => response.text())
@@ -37,6 +60,8 @@
             loadHTML("flightTable", "flight_table.html");
             loadHTML("filterSection", "filter_section.html");
             loadHTML("footer", "footer.html");
+            fetchFlightData(); // Henter data ved sidens indlæsning
+            setInterval(fetchFlightData, 30000); // Opdaterer data automatisk hver 30 sekunder
         });
     </script>
 </body>
