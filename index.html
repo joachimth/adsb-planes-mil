@@ -4,23 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Militære & Civile Fly Tracker</title>
-</head>
-<body>
-    <!-- Inkluderer header -->
-    <div id="header"></div>
-    
-    <!-- Inkluderer kortsektion -->
-    <div id="mapSection"></div>
-    
-    <!-- Inkluderer flyoversigt -->
-    <div id="flightTable"></div>
-    
-    <!-- Inkluderer filtersektion -->
-    <div id="filterSection"></div>
-    
-    <!-- Inkluderer footer (scripts og funktionalitet) -->
-    <div id="footer"></div>
-    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <script>
+        function loadHTML(id, filename) {
+            fetch(filename)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById(id).innerHTML = data;
+                })
+                .catch(error => console.error(`Fejl ved indlæsning af ${filename}:`, error));
+        }
+    </script>
     <script>
         let globalFlightData = [];
 
@@ -31,7 +25,7 @@
             try {
                 let response = await fetch(squawkUrl);
                 let data = await response.json();
-                globalFlightData = data.ac || []; // Gemmer data globalt
+                globalFlightData = data.ac || [];
                 console.log("Flydata hentet:", globalFlightData);
                 updateAllSections();
             } catch (error) {
@@ -43,15 +37,9 @@
             if (typeof updateFlightTable === "function") {
                 updateFlightTable(globalFlightData);
             }
-        }
-
-        function loadHTML(id, filename) {
-            fetch(`https://raw.githubusercontent.com/joachimth/adsb-planes-mil/main/${filename}`)
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById(id).innerHTML = data;
-                })
-                .catch(error => console.error(`Fejl ved indlæsning af ${filename}:`, error));
+            if (typeof updateMap === "function") {
+                updateMap(globalFlightData);
+            }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -60,9 +48,18 @@
             loadHTML("flightTable", "flight_table.html");
             loadHTML("filterSection", "filter_section.html");
             loadHTML("footer", "footer.html");
-            fetchFlightData(); // Henter data ved sidens indlæsning
-            setInterval(fetchFlightData, 30000); // Opdaterer data automatisk hver 30 sekunder
+            fetchFlightData();
+            setInterval(fetchFlightData, 30000);
         });
     </script>
+</head>
+<body>
+
+    <div id="header"></div>
+    <div id="mapSection"></div>
+    <div id="flightTable"></div>
+    <div id="filterSection"></div>
+    <div id="footer"></div>
+
 </body>
 </html>
