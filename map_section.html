@@ -2,12 +2,16 @@
 
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 <script>
+    console.log("📌 Initialiserer kort...");
+    
     const map = L.map('map').setView([56.0, 10.0], 6); // Centreret over Danmark
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
     function updateMap(flightData) {
+        console.log("📌 Opdaterer kort...");
+
         // Fjern eksisterende markører
         map.eachLayer(layer => {
             if (layer instanceof L.Marker) {
@@ -20,12 +24,12 @@
             if (flight.lat && flight.lon) {
                 L.marker([flight.lat, flight.lon])
                     .addTo(map)
-                    .bindPopup(`<b>${flight.callsign || 'Ukendt'}</b><br>Højde: ${flight.alt_baro || 'N/A'}<br>Hastighed: ${flight.gs || 'N/A'}`);
+                    .bindPopup(`<b>${flight.callsign || 'Ukendt'}</b><br>Højde: ${flight.alt_baro || 'N/A'} ft<br>Hastighed: ${flight.gs || 'N/A'} kn`);
             }
         });
     }
 
-    // Opdater kortet ved indlæsning af siden, hvis data allerede er hentet
+    // Opdater kortet, hvis globalFlightData allerede er hentet
     if (globalFlightData && globalFlightData.length > 0) {
         updateMap(globalFlightData);
     }
