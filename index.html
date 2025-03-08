@@ -20,12 +20,34 @@
                     console.log(`✅ ${filename} indlæst (${sectionsLoaded}/${totalSections})`);
 
                     if (sectionsLoaded === totalSections) {
-                        console.log("📌 Alle sektioner er indlæst, starter datahentning...");
-                        setTimeout(fetchFlightData, 500);
-                        setInterval(fetchFlightData, 30000);
+                        console.log("📌 Alle sektioner er indlæst. Tjekker funktioner...");
+
+                        waitForFunctions(() => {
+                            console.log("📌 Funktioner fundet. Starter datahentning...");
+                            fetchFlightData();
+                            setInterval(fetchFlightData, 30000);
+                        });
                     }
                 })
                 .catch(error => console.error(`❌ Fejl ved indlæsning af ${filename}:`, error));
+        }
+
+        function waitForFunctions(callback) {
+            let attempts = 0;
+            let interval = setInterval(() => {
+                if (typeof window.updateFlightTable === "function" && typeof window.updateMap === "function") {
+                    clearInterval(interval);
+                    console.log("✅ Funktioner er nu tilgængelige.");
+                    callback();
+                } else {
+                    console.warn(`⏳ Venter på funktioner... (${attempts})`);
+                    if (attempts > 10) {
+                        clearInterval(interval);
+                        console.error("❌ Funktionerne blev ikke fundet.");
+                    }
+                    attempts++;
+                }
+            }, 500);
         }
 
         async function fetchFlightData() {
@@ -44,7 +66,6 @@
                 globalFlightData = data.ac || [];
 
                 console.log("✅ Flydata hentet:", globalFlightData);
-
                 updateAllSections();
             } catch (error) {
                 console.error("❌ Fejl ved hentning af flydata:", error);
@@ -55,13 +76,13 @@
             if (typeof window.updateFlightTable === "function") {
                 window.updateFlightTable(globalFlightData);
             } else {
-                console.warn("⚠️ updateFlightTable() ikke fundet – måske ikke indlæst endnu?");
+                console.warn("⚠️ updateFlightTable() ikke fundet.");
             }
 
             if (typeof window.updateMap === "function") {
                 window.updateMap(globalFlightData);
             } else {
-                console.warn("⚠️ updateMap() ikke fundet – måske ikke indlæst endnu?");
+                console.warn("⚠️ updateMap() ikke fundet.");
             }
         }
 
