@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Militære & Civile Fly Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    
     <script>
         function loadHTML(id, filename) {
             fetch(filename)
@@ -15,6 +16,7 @@
                 .catch(error => console.error(`Fejl ved indlæsning af ${filename}:`, error));
         }
     </script>
+
     <script>
         let globalFlightData = [];
 
@@ -23,33 +25,51 @@
             let squawkUrl = proxyUrl + encodeURIComponent("https://api.adsb.lol/v2/mil");
 
             try {
+                console.log("🔄 Henter flydata fra API...");
                 let response = await fetch(squawkUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP-fejl! Status: ${response.status}`);
+                }
+
                 let data = await response.json();
                 globalFlightData = data.ac || [];
-                console.log("Flydata hentet:", globalFlightData);
+
+                console.log("✅ Flydata hentet:", globalFlightData);
+
                 updateAllSections();
             } catch (error) {
-                console.error("Fejl ved hentning af flydata:", error);
+                console.error("❌ Fejl ved hentning af flydata:", error);
             }
         }
 
         function updateAllSections() {
             if (typeof updateFlightTable === "function") {
                 updateFlightTable(globalFlightData);
+            } else {
+                console.warn("⚠️ updateFlightTable() ikke fundet");
             }
+
             if (typeof updateMap === "function") {
                 updateMap(globalFlightData);
+            } else {
+                console.warn("⚠️ updateMap() ikke fundet");
             }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            console.log("📌 DOM fuldt indlæst. Indlæser sektioner...");
+
             loadHTML("header", "header.html");
             loadHTML("mapSection", "map_section.html");
             loadHTML("flightTable", "flight_table.html");
             loadHTML("filterSection", "filter_section.html");
             loadHTML("footer", "footer.html");
-            fetchFlightData();
-            setInterval(fetchFlightData, 30000);
+
+            setTimeout(() => {
+                fetchFlightData();
+                setInterval(fetchFlightData, 30000);
+            }, 1000);
         });
     </script>
 </head>
