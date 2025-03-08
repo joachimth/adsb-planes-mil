@@ -7,18 +7,26 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
     
     <script>
+        let globalFlightData = [];
+        let sectionsLoaded = 0;
+        const totalSections = 5; // Antal HTML-sektioner
+
         function loadHTML(id, filename) {
             fetch(filename)
                 .then(response => response.text())
                 .then(data => {
                     document.getElementById(id).innerHTML = data;
-                })
-                .catch(error => console.error(`Fejl ved indlæsning af ${filename}:`, error));
-        }
-    </script>
+                    sectionsLoaded++;
+                    console.log(`✅ ${filename} indlæst (${sectionsLoaded}/${totalSections})`);
 
-    <script>
-        let globalFlightData = [];
+                    if (sectionsLoaded === totalSections) {
+                        console.log("📌 Alle sektioner er indlæst, starter datahentning...");
+                        fetchFlightData();
+                        setInterval(fetchFlightData, 30000);
+                    }
+                })
+                .catch(error => console.error(`❌ Fejl ved indlæsning af ${filename}:`, error));
+        }
 
         async function fetchFlightData() {
             const proxyUrl = "https://corsproxy.io/?url=";
@@ -47,13 +55,13 @@
             if (typeof updateFlightTable === "function") {
                 updateFlightTable(globalFlightData);
             } else {
-                console.warn("⚠️ updateFlightTable() ikke fundet");
+                console.warn("⚠️ updateFlightTable() ikke fundet – måske ikke indlæst endnu?");
             }
 
             if (typeof updateMap === "function") {
                 updateMap(globalFlightData);
             } else {
-                console.warn("⚠️ updateMap() ikke fundet");
+                console.warn("⚠️ updateMap() ikke fundet – måske ikke indlæst endnu?");
             }
         }
 
@@ -65,11 +73,6 @@
             loadHTML("flightTable", "flight_table.html");
             loadHTML("filterSection", "filter_section.html");
             loadHTML("footer", "footer.html");
-
-            setTimeout(() => {
-                fetchFlightData();
-                setInterval(fetchFlightData, 30000);
-            }, 1000);
         });
     </script>
 </head>
