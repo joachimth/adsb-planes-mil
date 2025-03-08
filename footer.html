@@ -1,100 +1,13 @@
-    <script>
-        const proxyUrl = "https://corsproxy.io/?url=";
-        let selectedSquawkCodes = new Set();
+<footer>
+    <p>&copy; 2024 Militære & Civile Fly Tracker. Alle rettigheder forbeholdes.</p>
+</footer>
 
-        document.addEventListener("DOMContentLoaded", () => {
-            loadSquawkCodes();
-            getFlights();
-            setInterval(getFlights, 30000);
-        });
-
-        async function loadSquawkCodes() {
-            try {
-                let response = await fetch("squawk_codes.json");
-                let squawkData = await response.json();
-                generateSquawkTable(squawkData);
-            } catch (error) {
-                console.error("❌ Fejl ved hentning af squawk-koder:", error);
-            }
-        }
-
-        function generateSquawkTable(squawkData) {
-            let squawkTableBody = document.getElementById("squawkTableBody");
-            if (!squawkTableBody) return;
-            squawkTableBody.innerHTML = "";
-
-            Object.entries(squawkData).forEach(([categoryKey, categoryValue]) => {
-                if (Array.isArray(categoryValue)) {
-                    categoryValue.forEach(s => {
-                        addSquawkRow(s);
-                    });
-                } else if (typeof categoryValue === 'object' && categoryValue !== null) {
-                    addSquawkRow(categoryValue);
-                }
-            });
-        }
-
-        function addSquawkRow(squawk) {
-            let squawkTableBody = document.getElementById("squawkTableBody");
-            let expandedCodes = expandSquawkRange(squawk.code);
-            expandedCodes.forEach(code => {
-                let checked = selectedSquawkCodes.has(code) ? "checked" : "";
-                let row = `<tr>
-                    <td>${code}</td>
-                    <td>${squawk.description}</td>
-                    <td><input type="checkbox" data-code="${code}" ${checked}></td>
-                </tr>`;
-                squawkTableBody.innerHTML += row;
-            });
-        }
-
-        function expandSquawkRange(code) {
-            if (code.includes("-")) {
-                let [start, end] = code.split("-").map(Number);
-                let expandedCodes = [];
-                for (let i = start; i <= end; i++) {
-                    expandedCodes.push(i.toString().padStart(4, "0"));
-                }
-                return expandedCodes;
-            }
-            return [code];
-        }
-
-        async function getFlights() {
-            let flights = [];
-            try {
-                for (let squawk of selectedSquawkCodes) {
-                    let squawkUrl = proxyUrl + encodeURIComponent(`https://api.adsb.lol/v2/squawk/${squawk}`);
-                    let response = await fetch(squawkUrl);
-                    let data = await response.json();
-                    flights = flights.concat(data.ac.filter(f => f.lat && f.lon));
-                }
-                updateFlightTable(flights);
-            } catch (error) {
-                console.error("Fejl ved hentning af data:", error);
-            }
-        }
-
-        function updateFlightTable(flights) {
-            let tbody = document.getElementById("flightTableBody");
-            tbody.innerHTML = "";
-            let emergencyDetected = false;
-
-            flights.forEach(f => {
-                let row = `<tr>
-                    <td>${f.flight || "Ukendt"}</td>
-                    <td>${f.type || "Ukendt"}</td>
-                    <td>${f.alt_baro || "N/A"}</td>
-                    <td>${f.gs || "N/A"}</td>
-                    <td>${f.squawk || "Ukendt"}</td>
-                </tr>`;
-                tbody.innerHTML += row;
-                if (["7500", "7600", "7700", "7777"].includes(f.squawk)) {
-                    emergencyDetected = true;
-                }
-            });
-            document.getElementById("alarmBanner").style.display = emergencyDetected ? "block" : "none";
-        }
-    </script>
-</body>
-</html>
+<style>
+    footer {
+        background-color: #333;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        margin-top: 20px;
+    }
+</style>
