@@ -1,7 +1,37 @@
-    <h2>Filtrer efter Squawk-koder</h2>
-    <table>
-        <thead>
-            <tr><th>Kode</th><th>Beskrivelse</th><th>Inkluder?</th></tr>
-        </thead>
-        <tbody id="squawkTableBody"></tbody>
-    </table>
+<div id="filterSection">
+    <label for="callsignFilter">Filtrér efter kaldsnavn:</label>
+    <input type="text" id="callsignFilter" placeholder="Indtast kaldsnavn">
+    <button id="applyFilter">Anvend filter</button>
+</div>
+
+<script>
+    document.getElementById('applyFilter').addEventListener('click', () => {
+        const filterValue = document.getElementById('callsignFilter').value.toLowerCase();
+        const filteredData = globalFlightData.filter(flight => 
+            flight.callsign && flight.callsign.toLowerCase().includes(filterValue)
+        );
+        updateFlightTable(filteredData);
+        updateMap(filteredData);
+    });
+
+    // Sørger for at filteret er aktivt ved indlæsning, hvis data allerede er hentet
+    if (globalFlightData && globalFlightData.length > 0) {
+        updateFlightTable(globalFlightData);
+        updateMap(globalFlightData);
+    }
+</script>
+
+<style>
+    #filterSection {
+        text-align: center;
+        margin: 20px auto;
+    }
+    input {
+        padding: 5px;
+        margin: 5px;
+    }
+    button {
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+</style>
