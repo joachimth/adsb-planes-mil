@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Militære & Civile Fly Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-    
+
+    <!-- Indlæs eksterne scripts -->
+    <script src="flight_table.js" defer></script>
+    <script src="map_section.js" defer></script>
+
     <script>
         let globalFlightData = [];
         let sectionsLoaded = 0;
@@ -20,34 +24,15 @@
                     console.log(`✅ ${filename} indlæst (${sectionsLoaded}/${totalSections})`);
 
                     if (sectionsLoaded === totalSections) {
-                        console.log("📌 Alle sektioner er indlæst. Tjekker funktioner...");
+                        console.log("📌 Alle sektioner er indlæst, starter datahentning...");
 
-                        waitForFunctions(() => {
-                            console.log("📌 Funktioner fundet. Starter datahentning...");
+                        setTimeout(() => {
                             fetchFlightData();
                             setInterval(fetchFlightData, 30000);
-                        });
+                        }, 500);
                     }
                 })
                 .catch(error => console.error(`❌ Fejl ved indlæsning af ${filename}:`, error));
-        }
-
-        function waitForFunctions(callback) {
-            let attempts = 0;
-            let interval = setInterval(() => {
-                if (typeof window.updateFlightTable === "function" && typeof window.updateMap === "function") {
-                    clearInterval(interval);
-                    console.log("✅ Funktioner er nu tilgængelige.");
-                    callback();
-                } else {
-                    console.warn(`⏳ Venter på funktioner... (${attempts})`);
-                    if (attempts > 10) {
-                        clearInterval(interval);
-                        console.error("❌ Funktionerne blev ikke fundet.");
-                    }
-                    attempts++;
-                }
-            }, 500);
         }
 
         async function fetchFlightData() {
@@ -66,6 +51,7 @@
                 globalFlightData = data.ac || [];
 
                 console.log("✅ Flydata hentet:", globalFlightData);
+
                 updateAllSections();
             } catch (error) {
                 console.error("❌ Fejl ved hentning af flydata:", error);
