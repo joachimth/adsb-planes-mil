@@ -1,7 +1,52 @@
-    <h2>Aktuelle Fly</h2>
-    <table>
-        <thead>
-            <tr><th>Fly ID</th><th>Type</th><th>Højde (ft)</th><th>Hastighed (knots)</th><th>Squawk</th></tr>
-        </thead>
-        <tbody id="flightTableBody"></tbody>
-    </table>
+<div id="flightTableContainer">
+    <!-- Tabellen vil blive dynamisk genereret her -->
+</div>
+
+<script>
+    function updateFlightTable(flightData) {
+        const container = document.getElementById('flightTableContainer');
+        if (!container) return;
+
+        if (flightData.length === 0) {
+            container.innerHTML = '<p>Ingen flydata tilgængelig.</p>';
+            return;
+        }
+
+        let tableHTML = '<table>';
+        tableHTML += '<thead><tr><th>Kaldsnavn</th><th>Højde</th><th>Hastighed</th><th>Position</th></tr></thead>';
+        tableHTML += '<tbody>';
+
+        flightData.forEach(flight => {
+            tableHTML += `<tr>
+                <td>${flight.callsign || 'N/A'}</td>
+                <td>${flight.alt_baro || 'N/A'} ft</td>
+                <td>${flight.gs || 'N/A'} kn</td>
+                <td>${flight.lat && flight.lon ? `${flight.lat.toFixed(2)}, ${flight.lon.toFixed(2)}` : 'N/A'}</td>
+            </tr>`;
+        });
+
+        tableHTML += '</tbody></table>';
+        container.innerHTML = tableHTML;
+    }
+
+    // Opdater tabellen ved indlæsning af siden, hvis data allerede er hentet
+    if (globalFlightData && globalFlightData.length > 0) {
+        updateFlightTable(globalFlightData);
+    }
+</script>
+
+<style>
+    table {
+        width: 80%;
+        margin: 20px auto;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: center;
+    }
+    th {
+        background-color: #f4f4f4;
+    }
+</style>
