@@ -9,7 +9,7 @@
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    function updateMap(flightData) {
+    window.updateMap = function updateMap(flightData) {
         console.log("📌 Opdaterer kort...");
 
         // Fjern eksisterende markører
@@ -27,13 +27,5 @@
                     .bindPopup(`<b>${flight.callsign || 'Ukendt'}</b><br>Højde: ${flight.alt_baro || 'N/A'} ft<br>Hastighed: ${flight.gs || 'N/A'} kn`);
             }
         });
-    }
-
-    // Gør funktionen global
-    window.updateMap = updateMap;
-
-    // Opdater kortet, hvis globalFlightData allerede er hentet
-    if (globalFlightData && globalFlightData.length > 0) {
-        updateMap(globalFlightData);
-    }
+    };
 </script>
