@@ -1,9 +1,11 @@
 <div id="flightTableContainer">
-    <!-- Tabellen vil blive dynamisk genereret her -->
+    <p>Henter flydata...</p>
 </div>
 
 <script>
     function updateFlightTable(flightData) {
+        console.log("📌 Opdaterer flytabel...");
+
         const container = document.getElementById('flightTableContainer');
         if (!container) return;
 
@@ -29,7 +31,7 @@
         container.innerHTML = tableHTML;
     }
 
-    // Opdater tabellen ved indlæsning af siden, hvis data allerede er hentet
+    // Opdater tabellen, hvis globalFlightData allerede er hentet
     if (globalFlightData && globalFlightData.length > 0) {
         updateFlightTable(globalFlightData);
     }
