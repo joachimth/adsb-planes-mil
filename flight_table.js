@@ -1,0 +1,30 @@
+function updateFlightTable(flightData) {
+    console.log("📌 Opdaterer flytabel...");
+
+    const container = document.getElementById('flightTableContainer');
+    if (!container) return;
+
+    if (flightData.length === 0) {
+        container.innerHTML = '<p>Ingen flydata tilgængelig.</p>';
+        return;
+    }
+
+    let tableHTML = '<table>';
+    tableHTML += '<thead><tr><th>Kaldsnavn</th><th>Højde</th><th>Hastighed</th><th>Position</th></tr></thead>';
+    tableHTML += '<tbody>';
+
+    flightData.forEach(flight => {
+        tableHTML += `<tr>
+            <td>${flight.callsign || 'N/A'}</td>
+            <td>${flight.alt_baro || 'N/A'} ft</td>
+            <td>${flight.gs || 'N/A'} kn</td>
+            <td>${flight.lat && flight.lon ? `${flight.lat.toFixed(2)}, ${flight.lon.toFixed(2)}` : 'N/A'}</td>
+        </tr>`;
+    });
+
+    tableHTML += '</tbody></table>';
+    container.innerHTML = tableHTML;
+}
+
+// Gør funktionen global
+window.updateFlightTable = updateFlightTable;
