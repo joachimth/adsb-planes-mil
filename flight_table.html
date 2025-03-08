@@ -3,7 +3,7 @@
 </div>
 
 <script>
-    function updateFlightTable(flightData) {
+    window.updateFlightTable = function updateFlightTable(flightData) {
         console.log("📌 Opdaterer flytabel...");
 
         const container = document.getElementById('flightTableContainer');
@@ -29,13 +29,5 @@
 
         tableHTML += '</tbody></table>';
         container.innerHTML = tableHTML;
-    }
-
-    // Gør funktionen global
-    window.updateFlightTable = updateFlightTable;
-
-    // Opdater tabellen, hvis globalFlightData allerede er hentet
-    if (globalFlightData && globalFlightData.length > 0) {
-        updateFlightTable(globalFlightData);
-    }
+    };
 </script>
