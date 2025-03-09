@@ -6,28 +6,6 @@
     <title>Militære & Civile Fly Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 
-</head>
-<body>
-
-    <div id="header"></div>
-    <div id="mapSection"></div>
-    <div id="flightTable"></div>
-    <div id="filterSection"></div>
-    <div id="footer"></div>
-
-</body>
-    <script>
-            document.addEventListener("DOMContentLoaded", () => {
-            console.log("📌 DOM fuldt indlæst. Indlæser sektioner...");
-
-            loadHTML("header", "header.html");
-            loadHTML("mapSection", "map_section.html");
-            loadHTML("flightTable", "flight_table.html");
-            loadHTML("filterSection", "filter_section.html");
-            loadHTML("footer", "footer.html");
-        });
-        </script>
-
     <!-- Indlæs eksterne scripts -->
     <script src="flight_table.js" defer></script>
     <script src="map_section.js" defer></script>
@@ -90,7 +68,24 @@
             }
         }
 
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("📌 DOM fuldt indlæst. Indlæser sektioner...");
 
+            loadHTML("header", "header.html");
+            loadHTML("mapSection", "map_section.html");
+            loadHTML("flightTable", "flight_table.html");
+            loadHTML("filterSection", "filter_section.html");
+            loadHTML("footer", "footer.html");
+        });
     </script>
+</head>
+<body>
 
+    <div id="header"></div>
+    <div id="mapSection"></div>
+    <div id="flightTable"></div>
+    <div id="filterSection"></div>
+    <div id="footer"></div>
+
+</body>
 </html>
