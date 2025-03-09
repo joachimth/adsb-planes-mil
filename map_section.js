@@ -13,7 +13,7 @@ function initMap() {
         }
 
         console.log("✅ Kort-container fundet. Initialiserer Leaflet kort...");
-        window.myMap = L.map('map').setView([56.0, 10.0], 6);
+        window.myMap = L.map('map').setView([56.0, 10.0], 3);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(window.myMap);
