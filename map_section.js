@@ -1,9 +1,7 @@
 console.log("📌 map_section.js indlæst - starter kort initialisering...");
 
-// Global variabel til at spore kortets tilstand
 window.mapReady = false;
 
-// Funktion til at initialisere kortet med brugerpræferencer
 function initMap(preferences) {
     try {
         const mapContainer = document.getElementById('map');
@@ -39,7 +37,6 @@ function initMap(preferences) {
     }
 }
 
-// Global funktion til at opdatere kortet med flydata
 window.updateMap = function updateMap(flightData) {
     console.log("📌 updateMap kaldt med flydata:", flightData);
 
@@ -60,6 +57,8 @@ window.updateMap = function updateMap(flightData) {
         }
     });
 
+    let emergencyFlights = [];
+
     flightData.forEach((flight, index) => {
         if (!flight.lat || !flight.lon) {
             console.warn(`⚠️ Fly [${index}] mangler lat/lon og bliver ikke vist.`, flight);
@@ -71,21 +70,27 @@ window.updateMap = function updateMap(flightData) {
                         Højde: ${flight.alt_baro || 'N/A'} ft<br>
                         Hastighed: ${flight.gs || 'N/A'} kn`);
 
-        if (flight.squawk === "7500" || flight.squawk === "7600" || flight.squawk === "7700") {
+        if (["7500", "7600", "7700"].includes(flight.squawk)) {
             marker.setIcon(L.icon({
                 iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
                 iconSize: [32, 32],
                 iconAnchor: [16, 32],
                 popupAnchor: [0, -32]
             }));
+            emergencyFlights.push([flight.lat, flight.lon]);
             console.warn(`🚨 Fly ${flight.callsign} har en nød-squawk: ${flight.squawk}`);
         }
     });
 
+    if (emergencyFlights.length > 0) {
+        const bounds = L.latLngBounds(emergencyFlights);
+        window.myMap.fitBounds(bounds, { padding: [50, 50] });
+        console.log("📌 Kortet zoomer til nød-squawk fly.");
+    }
+
     console.log("✅ Kort opdateret med nye flymarkører!");
 };
 
-// Indlæs brugerpræferencer og initialiser kortet
 async function loadAndInitMap() {
     try {
         const response = await fetch('user_preferences.json');
