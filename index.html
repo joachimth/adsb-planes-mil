@@ -15,7 +15,7 @@
     <script>
         let globalFlightData = [];
         let sectionsLoaded = 0;
-        const totalSections = 4;
+        const totalSections = 5; // Opdateret antal sektioner
 
         function loadHTML(id, filename) {
             fetch(filename)
@@ -71,43 +71,13 @@
             }
         }
 
-        async function loadUserPreferences() {
-            try {
-                const response = await fetch('user_preferences.json');
-                if (!response.ok) {
-                    throw new Error(`HTTP-fejl! Status: ${response.status}`);
-                }
-                const preferences = await response.json();
-                console.log("✅ Brugerpræferencer indlæst:", preferences);
-                applyUserPreferences(preferences);
-            } catch (error) {
-                console.error("❌ Fejl ved indlæsning af brugerpræferencer:", error);
-            }
-        }
-
-        function applyUserPreferences(preferences) {
-            if (preferences.map.enabled === false) {
-                document.getElementById("map").style.display = "none";
-            } else {
-                document.getElementById("map").style.display = "block";
-                if (window.myMap) {
-                    window.myMap.setView(preferences.map.center, preferences.map.zoom);
-                }
-            }
-
-            if (preferences.tables.enabled === false) {
-                document.getElementById("flightTableContainer").style.display = "none";
-            } else {
-                document.getElementById("flightTableContainer").style.display = "block";
-            }
-        }
-
         document.addEventListener("DOMContentLoaded", () => {
             console.log("📌 DOM fuldt indlæst. Indlæser sektioner...");
 
             loadHTML("header", "header.html");
             loadHTML("flightTable", "flight_table.html");
             loadHTML("filterSection", "filter_section.html");
+            loadHTML("squawkFilter", "squawk_filter.html");
             loadHTML("footer", "footer.html");
         });
     </script>
@@ -125,6 +95,7 @@
     </style>
     <div id="flightTable"></div>
     <div id="filterSection"></div>
+    <div id="squawkFilter"></div>
     <div id="footer"></div>
     <script src="map_section.js" defer></script>
     <script src="flight_table.js" defer></script>
