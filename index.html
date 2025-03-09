@@ -16,6 +16,18 @@
     <div id="footer"></div>
 
 </body>
+    <script>
+            document.addEventListener("DOMContentLoaded", () => {
+            console.log("📌 DOM fuldt indlæst. Indlæser sektioner...");
+
+            loadHTML("header", "header.html");
+            loadHTML("mapSection", "map_section.html");
+            loadHTML("flightTable", "flight_table.html");
+            loadHTML("filterSection", "filter_section.html");
+            loadHTML("footer", "footer.html");
+        });
+        </script>
+
     <!-- Indlæs eksterne scripts -->
     <script src="flight_table.js" defer></script>
     <script src="map_section.js" defer></script>
@@ -78,15 +90,7 @@
             }
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
-            console.log("📌 DOM fuldt indlæst. Indlæser sektioner...");
 
-            loadHTML("header", "header.html");
-            loadHTML("mapSection", "map_section.html");
-            loadHTML("flightTable", "flight_table.html");
-            loadHTML("filterSection", "filter_section.html");
-            loadHTML("footer", "footer.html");
-        });
     </script>
 
 </html>
