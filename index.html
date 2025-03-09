@@ -8,17 +8,14 @@
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
     
-    <!-- Make sure you put this AFTER Leaflet's CSS -->
-     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
     
-
     <script>
- 
         let globalFlightData = [];
         let sectionsLoaded = 0;
-        const totalSections = 4; // Antal HTML-sektioner
+        const totalSections = 4;
 
         function loadHTML(id, filename) {
             fetch(filename)
@@ -30,6 +27,7 @@
 
                     if (sectionsLoaded === totalSections) {
                         console.log("📌 Alle sektioner er indlæst. Starter datahentning...");
+                        loadUserPreferences();
                         fetchFlightData();
                         setInterval(fetchFlightData, 30000);
                     }
@@ -72,8 +70,39 @@
                 console.warn("⚠️ updateMap() ikke fundet.");
             }
         }
-        
-         document.addEventListener("DOMContentLoaded", () => {
+
+        async function loadUserPreferences() {
+            try {
+                const response = await fetch('user_preferences.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP-fejl! Status: ${response.status}`);
+                }
+                const preferences = await response.json();
+                console.log("✅ Brugerpræferencer indlæst:", preferences);
+                applyUserPreferences(preferences);
+            } catch (error) {
+                console.error("❌ Fejl ved indlæsning af brugerpræferencer:", error);
+            }
+        }
+
+        function applyUserPreferences(preferences) {
+            if (preferences.map.enabled === false) {
+                document.getElementById("map").style.display = "none";
+            } else {
+                document.getElementById("map").style.display = "block";
+                if (window.myMap) {
+                    window.myMap.setView(preferences.map.center, preferences.map.zoom);
+                }
+            }
+
+            if (preferences.tables.enabled === false) {
+                document.getElementById("flightTableContainer").style.display = "none";
+            } else {
+                document.getElementById("flightTableContainer").style.display = "block";
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
             console.log("📌 DOM fuldt indlæst. Indlæser sektioner...");
 
             loadHTML("header", "header.html");
@@ -81,7 +110,6 @@
             loadHTML("filterSection", "filter_section.html");
             loadHTML("footer", "footer.html");
         });
-
     </script>
 </head>
 <body>
@@ -90,7 +118,7 @@
     <style>
         #map {
             width: 80%;
-            height: 500px;  /* Sørger for, at kortet har en synlig højde */
+            height: 500px;
             margin: 20px auto;
             border: 1px solid black;
         }
@@ -98,7 +126,6 @@
     <div id="flightTable"></div>
     <div id="filterSection"></div>
     <div id="footer"></div>
-    <!-- Indlæs eksterne scripts -->
     <script src="map_section.js" defer></script>
     <script src="flight_table.js" defer></script>
 </body>
