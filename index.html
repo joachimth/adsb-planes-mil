@@ -14,8 +14,7 @@
     
     <script>
         let globalFlightData = [];
-        let sectionsLoaded = 0;
-        const totalSections = 5; // Opdateret antal sektioner
+        let sectionsLoaded = 6; // Opdateret antal sektioner
 
         function loadHTML(id, filename) {
             fetch(filename)
@@ -78,6 +77,7 @@
             loadHTML("flightTable", "flight_table.html");
             loadHTML("filterSection", "filter_section.html");
             loadHTML("squawkFilter", "squawk_filter.html");
+            loadHTML("emergencyAlert", "emergency_alert.html");
             loadHTML("footer", "footer.html");
         });
     </script>
@@ -96,6 +96,7 @@
     <div id="flightTable"></div>
     <div id="filterSection"></div>
     <div id="squawkFilter"></div>
+    <div id="emergencyAlert"></div>
     <div id="footer"></div>
     <script src="map_section.js" defer></script>
     <script src="flight_table.js" defer></script>
