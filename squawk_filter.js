@@ -45,10 +45,23 @@ function populateSquawkTable(squawkData) {
     document.querySelectorAll('#squawkTable input[type=checkbox]').forEach(checkbox => {
         checkbox.addEventListener('change', (event) => {
             const squawk = event.target.dataset.squawk;
-            if (event.target.checked) {
-                userSelectedSquawks.add(squawk);
+            
+            // Håndterer ranges fx "7500-7600"
+            if (squawk.includes("-")) {
+                const [start, end] = squawk.split("-").map(Number);
+                for (let i = start; i <= end; i++) {
+                    if (event.target.checked) {
+                        userSelectedSquawks.add(i.toString());
+                    } else {
+                        userSelectedSquawks.delete(i.toString());
+                    }
+                }
             } else {
-                userSelectedSquawks.delete(squawk);
+                if (event.target.checked) {
+                    userSelectedSquawks.add(squawk);
+                } else {
+                    userSelectedSquawks.delete(squawk);
+                }
             }
             updateFlightTable(globalFlightData);
         });
@@ -56,3 +69,45 @@ function populateSquawkTable(squawkData) {
 }
 
 document.addEventListener("DOMContentLoaded", loadSquawkCodes);
+
+// Opdaterer flytabel med prioriteret visning, men viser alle fly
+function updateFlightTable(flightData) {
+    console.log("📌 Opdaterer flytabel...");
+
+    const container = document.getElementById('flightTableContainer');
+    if (!container) return;
+
+    if (flightData.length === 0) {
+        container.innerHTML = '<p>Ingen flydata tilgængelig.</p>';
+        return;
+    }
+
+    let prioritizedFlights = [];
+    let otherFlights = [];
+    
+    flightData.forEach(flight => {
+        if (userSelectedSquawks.size > 0 && userSelectedSquawks.has(flight.squawk)) {
+            prioritizedFlights.push(flight);
+        } else {
+            otherFlights.push(flight);
+        }
+    });
+
+    let sortedFlights = [...prioritizedFlights, ...otherFlights];
+
+    let tableHTML = '<table>';
+    tableHTML += '<thead><tr><th>Kaldsnavn</th><th>Højde</th><th>Hastighed</th><th>Squawk</th></tr></thead>';
+    tableHTML += '<tbody>';
+
+    sortedFlights.forEach(flight => {
+        tableHTML += `<tr>
+            <td>${flight.callsign || 'N/A'}</td>
+            <td>${flight.alt_baro || 'N/A'} ft</td>
+            <td>${flight.gs || 'N/A'} kn</td>
+            <td>${flight.squawk || 'N/A'}</td>
+        </tr>`;
+    });
+
+    tableHTML += '</tbody></table>';
+    container.innerHTML = tableHTML;
+}
