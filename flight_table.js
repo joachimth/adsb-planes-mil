@@ -1,3 +1,22 @@
+console.log("📌 flight_table.js indlæst - klar til opdatering af flytabel...");
+
+let userPreferences = null;
+
+// Indlæs brugerpræferencer
+async function loadUserPreferences() {
+    try {
+        const response = await fetch('user_preferences.json');
+        if (!response.ok) {
+            throw new Error(`HTTP-fejl! Status: ${response.status}`);
+        }
+        userPreferences = await response.json();
+        console.log("✅ Brugerpræferencer indlæst for flytabel:", userPreferences);
+    } catch (error) {
+        console.error("❌ Fejl ved indlæsning af brugerpræferencer:", error);
+    }
+}
+
+// Opdater flytabel med præferencebaserede datafelter
 function updateFlightTable(flightData) {
     console.log("📌 Opdaterer flytabel...");
 
@@ -9,22 +28,31 @@ function updateFlightTable(flightData) {
         return;
     }
 
+    if (!userPreferences) {
+        console.warn("⚠️ Brugerpræferencer ikke indlæst endnu. Viser standarddata.");
+    }
+
+    const fieldsToShow = userPreferences?.display_fields || ["callsign", "alt_baro", "gs", "lat", "lon"];
+
     let tableHTML = '<table>';
-    tableHTML += '<thead><tr><th>Kaldsnavn</th><th>Højde</th><th>Hastighed</th><th>Position</th></tr></thead>';
+    tableHTML += '<thead><tr>' + fieldsToShow.map(field => `<th>${field}</th>`).join('') + '</tr></thead>';
     tableHTML += '<tbody>';
 
     flightData.forEach(flight => {
-        tableHTML += `<tr>
-            <td>${flight.callsign || 'N/A'}</td>
-            <td>${flight.alt_baro || 'N/A'} ft</td>
-            <td>${flight.gs || 'N/A'} kn</td>
-            <td>${flight.lat && flight.lon ? `${flight.lat.toFixed(2)}, ${flight.lon.toFixed(2)}` : 'N/A'}</td>
-        </tr>`;
+        tableHTML += '<tr>' + fieldsToShow.map(field => `<td>${flight[field] || 'N/A'}</td>`).join('') + '</tr>';
     });
 
     tableHTML += '</tbody></table>';
     container.innerHTML = tableHTML;
 }
+
+// Indlæs præferencer før opdatering af tabel
+document.addEventListener("DOMContentLoaded", async () => {
+    await loadUserPreferences();
+    if (typeof window.updateFlightTable === "function" && window.globalFlightData) {
+        updateFlightTable(window.globalFlightData);
+    }
+});
 
 // Gør funktionen global
 window.updateFlightTable = updateFlightTable;
