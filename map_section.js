@@ -1,11 +1,12 @@
 console.log("📌 map_section.js indlæst - starter kort initialisering...");
 
-// Funktion til at initialisere kortet
+window.mapReady = false; // Flag til at spore om kortet er klar
+
 function initMap() {
     const mapContainer = document.getElementById('map');
 
     if (!mapContainer) {
-        console.error("❌ FEJL: #map container ikke fundet i DOM! Prøver igen om 500ms...");
+        console.error("❌ FEJL: #map container ikke fundet! Prøver igen om 500ms...");
         setTimeout(initMap, 500);
         return;
     }
@@ -18,24 +19,24 @@ function initMap() {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(window.myMap);
 
-    console.log("✅ Kortet (window.myMap) er nu initialiseret!");
+    window.mapReady = true; // Kortet er nu klar
+    console.log("✅ Kortet er initialiseret!");
 
-    // Når kortet er klar, opdater det med eksisterende flydata
+    // Hvis flydata allerede er hentet, vent 1 sek. og opdater kortet
     if (window.globalFlightData && window.globalFlightData.length > 0) {
-        console.log("🔄 Kort opdateres med eksisterende flydata...");
-        updateMap(window.globalFlightData);
+        setTimeout(() => {
+            console.log("🔄 Forsinket kortopdatering med eksisterende data...");
+            updateMap(window.globalFlightData);
+        }, 1000);
     }
-
-    window.mapReady = true; // Marker at kortet er klar
 }
 
 // Definerer updateMap globalt
 window.updateMap = function updateMap(flightData) {
     console.log("📌 updateMap kaldt med flydata:", flightData);
 
-    // Vent på, at kortet er initialiseret
-    if (!window.myMap) {
-        console.error("❌ FEJL: Kortet (window.myMap) er ikke initialiseret endnu! Prøver igen om 500ms...");
+    if (!window.mapReady) {
+        console.warn("⏳ Kortet er ikke klar endnu! Forsøger igen om 500ms...");
         setTimeout(() => updateMap(flightData), 500);
         return;
     }
