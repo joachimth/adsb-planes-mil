@@ -11,13 +11,45 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
-
+    
     <link rel="stylesheet" href="https://unpkg.com/mvp.css">
+    
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 90%;
+            max-width: 1200px;
+        }
+        #map {
+            width: 100%;
+            height: 500px;
+            border: 1px solid black;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+    </style>
     
     <script>
         let globalFlightData = [];
         let sectionsLoaded = 0;
-        const totalSections = 5; // Antal HTML-sektioner der skal indlæses
+        const totalSections = 5; 
 
         function loadHTML(id, filename) {
             fetch(filename)
@@ -75,7 +107,6 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             console.log("📌 DOM fuldt indlæst. Indlæser sektioner...");
-
             loadHTML("header", "header.html");
             loadHTML("flightTable", "flight_table.html");
             loadHTML("filterSection", "filter_section.html");
@@ -85,36 +116,29 @@
     </script>
 </head>
 <body>
-    <div id="header"></div>
-    <div id="map"></div>
-    <style>
-        #map {
-            width: 80%;
-            height: 500px;
-            margin: 20px auto;
-            border: 1px solid black;
-        }
-    </style>
-    <div id="flightTable"></div>
-    <div id="filterSection"></div>
-    <div id="squawkFilterSection">
-    <h3>Vælg Squawk-koder</h3>
-    <table id="squawkTable">
-        <thead>
-            <tr>
-                <th>Squawk-kode</th>
-                <th>Beskrivelse</th>
-                <th>Inkluder</th>
-            </tr>
-        </thead>
-        <tbody id="squawkTableBody">
-            <!-- Squawk-koder indlæses her dynamisk -->
-        </tbody>
-    </table>
-</div>
-
-    <div id="emergencyAlert"></div>
-    <div id="footer"></div>
+    <div id="container">
+        <div id="header"></div>
+        <div id="map"></div>
+        <div id="flightTable"></div>
+        <div id="filterSection"></div>
+        <div id="squawkFilterSection">
+            <h3>Vælg Squawk-koder</h3>
+            <table id="squawkTable">
+                <thead>
+                    <tr>
+                        <th>Squawk-kode</th>
+                        <th>Beskrivelse</th>
+                        <th>Inkluder</th>
+                    </tr>
+                </thead>
+                <tbody id="squawkTableBody">
+                    <!-- Squawk-koder indlæses her dynamisk -->
+                </tbody>
+            </table>
+        </div>
+        <div id="emergencyAlert"></div>
+        <div id="footer"></div>
+    </div>
     <script src="map_section.js" defer></script>
     <script src="flight_table.js" defer></script>
     <script src="squawk_filter.js" defer></script>
