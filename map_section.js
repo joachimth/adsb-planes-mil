@@ -3,33 +3,17 @@ console.log("📌 map_section.js indlæst - starter kort initialisering...");
 // Global variabel til at spore kortets tilstand
 window.mapReady = false;
 
-// Funktion til at vente på, at #map findes i DOM'en
-function waitForMapContainer(attempts = 20) {
-    const mapContainer = document.getElementById('map');
-
-    if (!mapContainer) {
-        if (attempts > 0) {
-            console.warn(`⏳ #map container ikke fundet! Forsøger igen om 500ms... (${20 - attempts} forsøg tilbage)`);
-            setTimeout(() => waitForMapContainer(attempts - 1), 500);
-        } else {
-            console.error("❌ FEJL: #map container kunne ikke findes efter flere forsøg.");
-        }
-        return;
-    }
-
-    console.log("✅ #map container fundet. Initialiserer Leaflet kort...");
-    initMap();
-}
-
-// Funktion til at initialisere Leaflet-kortet
+// Funktion til at initialisere kortet
 function initMap() {
-    if (window.myMap) {
-        console.warn("⚠️ Kortet er allerede initialiseret.");
-        return;
-    }
-
     try {
-        window.myMap = L.map('map').setView([56.0, 10.0], 6); // Centreret over Danmark
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) {
+            console.error("❌ FEJL: #map container ikke fundet i DOM'en!");
+            return;
+        }
+
+        console.log("✅ Kort-container fundet. Initialiserer Leaflet kort...");
+        window.myMap = L.map('map').setView([56.0, 10.0], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(window.myMap);
@@ -37,7 +21,7 @@ function initMap() {
         window.mapReady = true;
         console.log("✅ Kortet er initialiseret!");
 
-        // Hvis der allerede er hentet flydata, opdater kortet
+        // Hvis flydata allerede er hentet, opdater kortet
         if (window.globalFlightData && window.globalFlightData.length > 0) {
             console.log("🔄 Kort opdateres med eksisterende flydata...");
             updateMap(window.globalFlightData);
@@ -47,10 +31,11 @@ function initMap() {
     }
 }
 
-// Global updateMap-funktion
+// **Global funktion til at opdatere kortet med flydata**
 window.updateMap = function updateMap(flightData) {
     console.log("📌 updateMap kaldt med flydata:", flightData);
 
+    // Vent på, at kortet er klar
     if (!window.mapReady || !window.myMap) {
         console.warn("⏳ Kortet er ikke klar endnu! Forsøger igen om 500ms...");
         setTimeout(() => updateMap(flightData), 500);
@@ -76,15 +61,25 @@ window.updateMap = function updateMap(flightData) {
             return;
         }
 
-        L.marker([flight.lat, flight.lon])
-            .addTo(window.myMap)
+        let marker = L.marker([flight.lat, flight.lon]).addTo(window.myMap)
             .bindPopup(`<b>${flight.callsign || 'Ukendt'}</b><br>
                         Højde: ${flight.alt_baro || 'N/A'} ft<br>
                         Hastighed: ${flight.gs || 'N/A'} kn`);
+
+        // **Marker nødsituationer med rød farve**
+        if (flight.squawk === "7500" || flight.squawk === "7600" || flight.squawk === "7700") {
+            marker.setIcon(L.icon({
+                iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+                popupAnchor: [0, -32]
+            }));
+            console.warn(`🚨 Fly ${flight.callsign} har en nød-squawk: ${flight.squawk}`);
+        }
     });
 
     console.log("✅ Kort opdateret med nye flymarkører!");
 };
 
-// Vent på, at DOM'en er klar, og start kortinitialisering
-document.addEventListener("DOMContentLoaded", () => waitForMapContainer());
+// **Sikrer, at kortet bliver initialiseret, når DOM'en er klar**
+document.addEventListener("DOMContentLoaded", initMap);
