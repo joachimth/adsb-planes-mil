@@ -1,8 +1,8 @@
 {
     "map": {
         "enabled": true,
-        "center": [55.0, 10.0],
-        "zoom": 5
+        "center": [55.450047, 19.746850],
+        "zoom": 3
     },
     "tables": {
         "enabled": true
