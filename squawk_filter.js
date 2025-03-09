@@ -96,15 +96,16 @@ function updateFlightTable(flightData) {
     let sortedFlights = [...prioritizedFlights, ...otherFlights];
 
     let tableHTML = '<table>';
-    tableHTML += '<thead><tr><th>Kaldsnavn</th><th>Højde</th><th>Hastighed</th><th>Squawk</th></tr></thead>';
+    tableHTML += '<thead><tr><th>Fly</th><th>Højde</th><th>Hastighed</th><th>Squawk</th><th>Type</th></tr></thead>';
     tableHTML += '<tbody>';
 
     sortedFlights.forEach(flight => {
         tableHTML += `<tr>
-            <td>${flight.callsign || 'N/A'}</td>
-            <td>${flight.alt_baro || 'N/A'} ft</td>
-            <td>${flight.gs || 'N/A'} kn</td>
-            <td>${flight.squawk || 'N/A'}</td>
+            <td>${flight.flight || ''}</td>
+            <td>${flight.alt_baro || ''} ft</td>
+            <td>${flight.gs || ''} kn</td>
+            <td>${flight.squawk || ''}</td>
+            <td>${flight.type || ''}</td>
         </tr>`;
     });
 
