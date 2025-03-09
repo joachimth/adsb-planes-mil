@@ -14,9 +14,18 @@
      crossorigin=""></script>
     
 
-
-
     <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("📌 DOM fuldt indlæst. Indlæser sektioner...");
+
+            loadHTML("header", "header.html");
+            loadHTML("flightTable", "flight_table.html");
+            loadHTML("filterSection", "filter_section.html");
+            loadHTML("footer", "footer.html");
+        });
+
+
+        
         let globalFlightData = [];
         let sectionsLoaded = 0;
         const totalSections = 5; // Antal HTML-sektioner
@@ -74,14 +83,7 @@
             }
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
-            console.log("📌 DOM fuldt indlæst. Indlæser sektioner...");
 
-            loadHTML("header", "header.html");
-            loadHTML("flightTable", "flight_table.html");
-            loadHTML("filterSection", "filter_section.html");
-            loadHTML("footer", "footer.html");
-        });
     </script>
 </head>
 <body>
