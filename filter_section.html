@@ -5,20 +5,40 @@
 </div>
 
 <script>
+    let userPreferences = null;
+
+    // Indlæs brugerpræferencer
+    async function loadUserPreferences() {
+        try {
+            const response = await fetch('user_preferences.json');
+            if (!response.ok) {
+                throw new Error(`HTTP-fejl! Status: ${response.status}`);
+            }
+            userPreferences = await response.json();
+            console.log("✅ Brugerpræferencer indlæst for filter:", userPreferences);
+        } catch (error) {
+            console.error("❌ Fejl ved indlæsning af brugerpræferencer:", error);
+        }
+    }
+
     document.getElementById('applyFilter').addEventListener('click', () => {
         const filterValue = document.getElementById('callsignFilter').value.toLowerCase();
-        const filteredData = globalFlightData.filter(flight => 
+        let filteredData = globalFlightData.filter(flight => 
             flight.callsign && flight.callsign.toLowerCase().includes(filterValue)
         );
+        
+        if (userPreferences && userPreferences.default_active_squawks) {
+            filteredData = filteredData.filter(flight => 
+                userPreferences.default_active_squawks.includes(flight.squawk)
+            );
+        }
+
         updateFlightTable(filteredData);
         updateMap(filteredData);
     });
 
-    // Sørger for at filteret er aktivt ved indlæsning, hvis data allerede er hentet
-    if (globalFlightData && globalFlightData.length > 0) {
-        updateFlightTable(globalFlightData);
-        updateMap(globalFlightData);
-    }
+    // Indlæs præferencer før filter bruges
+document.addEventListener("DOMContentLoaded", loadUserPreferences);
 </script>
 
 <style>
