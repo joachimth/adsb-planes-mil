@@ -39,7 +39,11 @@ function updateFlightTable(flightData) {
     tableHTML += '<tbody>';
 
     flightData.forEach(flight => {
-        tableHTML += '<tr>' + fieldsToShow.map(field => `<td>${flight[field] || 'N/A'}</td>`).join('') + '</tr>';
+        // Sørg for at alle militære fly altid vises
+        const isMilitary = flight.squawk && userPreferences?.default_active_squawks.includes(flight.squawk);
+        if (isMilitary || userPreferences?.default_active_squawks.includes(flight.squawk)) {
+            tableHTML += '<tr>' + fieldsToShow.map(field => `<td>${flight[field] || 'N/A'}</td>`).join('') + '</tr>';
+        }
     });
 
     tableHTML += '</tbody></table>';
