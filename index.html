@@ -14,7 +14,8 @@
     
     <script>
         let globalFlightData = [];
-        let sectionsLoaded = 6; // Opdateret antal sektioner
+        let sectionsLoaded = 0;
+        const totalSections = 6; // Antal HTML-sektioner der skal indlæses
 
         function loadHTML(id, filename) {
             fetch(filename)
