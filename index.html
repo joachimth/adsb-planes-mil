@@ -15,11 +15,13 @@
     <link rel="stylesheet" href="https://unpkg.com/mvp.css">
     
     <style>
+        /* --- RESPONSIVE FORBEDRINGER --- */
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            /* Juster til toppen for at undgå unødvendigt tomrum på store skærme */
+            justify-content: flex-start; 
             min-height: 100vh;
             margin: 0;
             text-align: center;
@@ -30,23 +32,45 @@
             align-items: center;
             width: 90%;
             max-width: 1200px;
+            /* Tilføjer automatisk afstand mellem sektionerne (kort, tabel etc.) */
+            gap: 25px; 
         }
         #map {
             width: 100%;
-            height: 500px;
-            border: 1px solid black;
+            /* Gør kortet responsivt ved at fastholde et 16:9 format */
+            aspect-ratio: 16 / 9; 
+            /* Sætter en max-højde for at undgå, at kortet bliver for dominerende på høje/smalle skærme */
+            max-height: 70vh; 
+            border: 1px solid #ddd;
+            border-radius: 8px; /* Lidt afrundede hjørner for et pænere look */
         }
+        
+        /* Denne 'wrapper' gør tabeller responsive ved at lade dem scrolle horisontalt */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto; /* Tillad scroll KUN på x-aksen */
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
+        
         th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
+            padding: 12px 15px; /* Lidt mere padding for bedre læsbarhed */
+            border: none; /* Kanter styres nu af wrapper og border-bottom */
+            border-bottom: 1px solid #ddd;
+        }
+        
+        tr:last-child td {
+            border-bottom: none; /* Fjerner den sidste kant i tabellen */
         }
     </style>
     
     <script>
+        // --- DIN JAVASCRIPT ER UÆNDRET ---
         let globalFlightData = [];
         let sectionsLoaded = 0;
         const totalSections = 5; 
@@ -119,26 +143,36 @@
     <div id="container">
         <div id="header"></div>
         <div id="map"></div>
+        
+        <!-- VIGTIGT: Husk også at tilføje class="table-wrapper" til tabellen i 'flight_table.html' -->
         <div id="flightTable"></div>
+        
         <div id="filterSection"></div>
+        
         <div id="squawkFilterSection">
             <h3>Vælg Squawk-koder</h3>
-            <table id="squawkTable">
-                <thead>
-                    <tr>
-                        <th>Squawk-kode</th>
-                        <th>Beskrivelse</th>
-                        <th>Inkluder</th>
-                    </tr>
-                </thead>
-                <tbody id="squawkTableBody">
-                    <!-- Squawk-koder indlæses her dynamisk -->
-                </tbody>
-            </table>
+            <!-- Wrapperen her gør tabellen responsiv -->
+            <div class="table-wrapper">
+                <table id="squawkTable">
+                    <thead>
+                        <tr>
+                            <th>Squawk-kode</th>
+                            <th>Beskrivelse</th>
+                            <th>Inkluder</th>
+                        </tr>
+                    </thead>
+                    <tbody id="squawkTableBody">
+                        <!-- Squawk-koder indlæses her dynamisk -->
+                    </tbody>
+                </table>
+            </div>
         </div>
+        
         <div id="emergencyAlert"></div>
         <div id="footer"></div>
     </div>
+    
+    <!-- Scripts indlæses til sidst, hvilket er god praksis -->
     <script src="map_section.js" defer></script>
     <script src="flight_table.js" defer></script>
     <script src="squawk_filter.js" defer></script>
