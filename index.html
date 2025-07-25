@@ -95,7 +95,6 @@
                 { id: 'footer-container', url: 'footer.html' }
             ];
 
-            // Bruger Promise.all til at hente alt på samme tid
             const promises = sections.map(section => 
                 fetch(section.url)
                     .then(response => {
@@ -115,12 +114,10 @@
          * Kalder initialiseringsfunktionerne fra alle vores JS-moduler.
          */
         async function initAllJsModules() {
-             // Funktionerne (f.eks. window.initMap) bliver defineret i de defer'ede scripts.
             if(typeof initMap === "function") initMap();
             if(typeof initializeCallsignFilter === "function") initializeCallsignFilter();
             if(typeof initializeEmergencyAlert === "function") initializeEmergencyAlert();
             
-            // Squawk-filteret er asynkront, da det henter en JSON-fil, så vi bruger await.
             if(typeof initializeSquawkFilter === "function") {
                 await initializeSquawkFilter();
             }
@@ -139,8 +136,6 @@
                 globalFlightData = data.ac || [];
                 
                 console.log(`✅ ${globalFlightData.length} fly hentet.`);
-
-                // Efter data er hentet, opdateres alle visninger.
                 applyFiltersAndUpdate();
 
             } catch (error) {
@@ -148,10 +143,44 @@
             }
         }
 
+        // --- NY HJÆLPEFUNKTION TIL SQUAWK RANGES ---
         /**
-         * DEN CENTRALE OPDATERINGSFUNKTION
+         * En specialiseret funktion, der tjekker, om en fly-squawk matcher
+         * de valgte filtre, inklusiv ranges som "4400-4477".
+         * @param {string} flightSquawk - Den enkelte squawk-kode fra et fly.
+         * @param {Set<string>} selectedSquawks - Sættet med brugerens valgte koder/ranges.
+         * @returns {boolean} - True hvis der er et match, ellers false.
+         */
+        function checkSquawkMatch(flightSquawk, selectedSquawks) {
+            if (!flightSquawk) return false;
+
+            // 1. Hurtigt tjek for direkte match (mest almindelige tilfælde)
+            if (selectedSquawks.has(flightSquawk)) {
+                return true;
+            }
+
+            // 2. Hvis der ikke var et direkte match, tjek om squawken passer ind i en range.
+            const flightSquawkNum = parseInt(flightSquawk, 10);
+            if (isNaN(flightSquawkNum)) {
+                return false; // Kan ikke sammenligne, hvis det ikke er et tal.
+            }
+
+            for (const selected of selectedSquawks) {
+                if (selected.includes('-')) {
+                    const [start, end] = selected.split('-').map(Number);
+                    if (!isNaN(start) && !isNaN(end) && flightSquawkNum >= start && flightSquawkNum <= end) {
+                        return true; // Match fundet i en range!
+                    }
+                }
+            }
+
+            // 3. Ingen match fundet efter at have tjekket alt.
+            return false;
+        }
+
+        /**
+         * DEN CENTRALE OPDATERINGSFUNKTION (OPDATERET)
          * Anvender alle aktive filtre og opdaterer kort og tabel.
-         * Denne funktion kaldes HVER gang data opdateres eller et filter ændres.
          */
         function applyFiltersAndUpdate() {
             if (!globalFlightData) return;
@@ -166,9 +195,13 @@
                 const callsign = (flight.flight || '').toLowerCase();
                 const squawk = flight.squawk;
 
+                // Tjek om flyet matcher kaldesignal-filteret.
                 const callsignMatch = activeCallsignFilter === '' || callsign.includes(activeCallsignFilter);
-                const squawkMatch = userSelectedSquawks.size === 0 || userSelectedSquawks.has(squawk);
+
+                // Tjek om flyet matcher squawk-filteret VED BRUG AF VORES NYE HJÆLPEFUNKTION.
+                const squawkMatch = checkSquawkMatch(squawk, userSelectedSquawks);
                 
+                // Vis flyet, hvis det matcher BÅDE kaldesignal- OG squawk-filteret.
                 return callsignMatch && squawkMatch;
             });
 
@@ -179,6 +212,9 @@
 
         // Gør nøglefunktioner og variabler globale, så de kan tilgås fra de separate moduler
         window.applyFiltersAndUpdate = applyFiltersAndUpdate;
+        
+        // Disse variabler bliver manipuleret direkte af deres respektive moduler.
+        // Vi behøver ikke at om-definere dem her, men sørger for de er tilgængelige.
         window.activeCallsignFilter = activeCallsignFilter;
         window.userSelectedSquawks = userSelectedSquawks;
 
