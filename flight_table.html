@@ -1,32 +1,29 @@
-const container = document.getElementById('flightTableContainer');
-if (!container) return;
-
-if (flightData.length === 0) {
-    container.innerHTML = '<p>Ingen flydata tilgængelig.</p>';
-    return;
-}
-
-if (!userPreferences) {
-    console.warn("⚠️ Brugerpræferencer ikke indlæst endnu. Viser standarddata.");
-}
-
-const fieldsToShow = userPreferences?.display_fields || ["callsign", "alt_baro", "gs", "lat", "lon"];
-let filteredData = flightData;
-
-// Filtrer efter brugerens valgte squawk-koder
-if (typeof userSelectedSquawks !== 'undefined' && userSelectedSquawks.size > 0) {
-    filteredData = flightData.filter(flight => 
-        userSelectedSquawks.has(flight.squawk) || userPreferences?.default_active_squawks.includes(flight.squawk)
-    );
-}
-
-let tableHTML = '<table>';
-tableHTML += '<thead><tr>' + fieldsToShow.map(field => `<th>${field}</th>`).join('') + '</tr></thead>';
-tableHTML += '<tbody>';
-
-filteredData.forEach(flight => {
-    tableHTML += '<tr>' + fieldsToShow.map(field => `<td>${flight[field] || 'N/A'}</td>`).join('') + '</tr>';
-});
-
-tableHTML += '</tbody></table>';
-container.innerHTML = tableHTML;
+<!-- 
+  'table-wrapper' klassen sikrer, at tabellen kan scrolle horisontalt 
+  på små skærme, så den ikke "knækker" sidens layout.
+-->
+<div class="table-wrapper">
+    <table id="flights">
+        <thead>
+            <tr>
+                <th>ICAO</th>
+                <th>Kaldesignal</th>
+                <th>Squawk</th>
+                <th>Højde (fod)</th>
+                <th>Hastighed (knob)</th>
+                <th>Land</th>
+            </tr>
+        </thead>
+        <!-- 
+          Denne 'tbody' (table body) med id="flightTableBody" er tom.
+          Vores JavaScript-fil (flight_table.js) vil finde dette id 
+          og indsætte rækker med flydata her.
+        -->
+        <tbody id="flightTableBody">
+            <tr>
+                <!-- Viser en midlertidig besked, mens data hentes -->
+                <td colspan="6">Henter og opdaterer flydata...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
