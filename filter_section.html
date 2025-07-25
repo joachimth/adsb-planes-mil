@@ -1,42 +1,35 @@
-<div id="filterSection">
-    <label for="callsignFilter">Filtrér efter kaldsnavn:</label>
-    <input type="text" id="callsignFilter" placeholder="Indtast kaldsnavn">
-    <button id="applyFilter">Anvend filter</button>
-</div>
+console.log("✅ callsign_filter.js er indlæst.");
 
-<script>
-    let userPreferences = null;
+/**
+ * Initialiserer logikken for kaldesignal-filteret.
+ */
+function initializeCallsignFilter() {
+    const filterInput = document.getElementById('callsignFilterInput');
 
-    // Indlæs brugerpræferencer
-    async function loadUserPreferences() {
-        try {
-            const response = await fetch('user_preferences.json');
-            if (!response.ok) {
-                throw new Error(`HTTP-fejl! Status: ${response.status}`);
-            }
-            userPreferences = await response.json();
-            console.log("✅ Brugerpræferencer indlæst for filter:", userPreferences);
-        } catch (error) {
-            console.error("❌ Fejl ved indlæsning af brugerpræferencer:", error);
-        }
+    if (!filterInput) {
+        console.error("❌ Fejl: Kunne ikke finde #callsignFilterInput.");
+        return;
     }
 
-    document.getElementById('applyFilter').addEventListener('click', () => {
-        const filterValue = document.getElementById('callsignFilter').value.toLowerCase();
-        let filteredData = globalFlightData.filter(flight => 
-            flight.callsign && flight.callsign.toLowerCase().includes(filterValue)
-        );
-        
-        if (userPreferences && userPreferences.default_active_squawks) {
-            filteredData = filteredData.filter(flight => 
-                userPreferences.default_active_squawks.includes(flight.squawk)
-            );
+    // Lyt efter 'input'-hændelsen. Den aktiveres hver gang, brugeren taster.
+    filterInput.addEventListener('input', () => {
+        // Hent den aktuelle tekst fra input-feltet, og konverter til små bogstaver.
+        const filterValue = filterInput.value.toLowerCase();
+
+        // Gem filter-værdien i en global variabel, som index.html kan læse.
+        // Vi definerer denne variabel i index.html senere.
+        window.activeCallsignFilter = filterValue;
+
+        // Kald den centrale opdateringsfunktion i index.html for at anvende alle filtre.
+        // Denne funktion vil læse den nye filter-værdi og opdatere kort og tabel.
+        if (typeof window.applyFiltersAndUpdate === "function") {
+            window.applyFiltersAndUpdate();
+        } else {
+            console.warn("⚠️ applyFiltersAndUpdate() er ikke defineret endnu.");
         }
-
-        updateFlightTable(filteredData);
-        updateMap(filteredData);
     });
+}
 
-    // Indlæs præferencer før filter bruges
-document.addEventListener("DOMContentLoaded", loadUserPreferences);
-</script>
+// Vi venter med at køre initialiseringen, til hele siden er indlæst.
+// Vi kalder denne funktion fra `index.html` for at sikre korrekt rækkefølge.
+window.initializeCallsignFilter = initializeCallsignFilter;
