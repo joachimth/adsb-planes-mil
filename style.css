@@ -108,17 +108,20 @@ tr:last-child td {
         aspect-ratio: 4 / 3;
     }
 
-    /* Omdan KUN fly-tabellen til 'kort' */
-    #flight-table-container table {
+    /* 
+      ÆNDRING: Omdanner KUN fly-tabellen (med id="flights") til 'kort'.
+      Dette forhindrer, at andre tabeller (som i filtrene) bliver ødelagt.
+    */
+    #flights {
         border: none;
     }
 
-    #flight-table-container thead {
+    #flights thead {
         /* Skjul tabel-overskrifterne, da vi nu bruger labels i stedet */
         display: none;
     }
 
-    #flight-table-container tr {
+    #flights tr {
         display: block;
         border: 1px solid #ddd;
         border-radius: 8px;
@@ -126,7 +129,7 @@ tr:last-child td {
         padding: 1rem;
     }
 
-    #flight-table-container td {
+    #flights td {
         display: block;
         text-align: right;
         padding: 8px 0;
@@ -134,12 +137,12 @@ tr:last-child td {
         position: relative;
     }
     
-    #flight-table-container td:last-child {
+    #flights td:last-child {
         border-bottom: none;
     }
 
     /* Den magiske del: Indsæt labels før hver data-celle */
-    #flight-table-container td::before {
+    #flights td::before {
         content: attr(data-label);
         position: absolute;
         left: 0;
