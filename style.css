@@ -112,9 +112,13 @@ tr:last-child td {
         aspect-ratio: 4 / 3;
     }
 
-    /* --- MOBIL-LAYOUT FOR FLY-TABEL (KORT) via FLEXBOX --- */
+    /* --- MOBIL-LAYOUT FOR FLY-TABEL (KORT) --- */
     #flights {
         border: none;
+        /* NYT: Centrerer fly-kortene horisontalt i sektionen */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
     #flights thead {
         display: none;
@@ -125,11 +129,14 @@ tr:last-child td {
         border-radius: 8px;
         margin-bottom: 1rem;
         padding: 0.5rem 1rem;
+        width: 100%;
+        max-width: 400px; /* Forhindrer kortene i at blive for brede på tablets */
+        box-sizing: border-box;
     }
     #flights td {
-        display: flex; /* Gør cellen til en flex container */
-        justify-content: space-between; /* Skubber label og data til hver sin side */
-        align-items: center; /* Centrerer dem lodret */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         padding: 10px 0;
         border-bottom: 1px dotted #ccc;
     }
@@ -140,11 +147,11 @@ tr:last-child td {
         content: attr(data-label);
         font-weight: bold;
         color: #333;
-        padding-right: 1rem; /* Giver lidt luft mellem label og data */
+        padding-right: 1rem;
         text-align: left;
     }
 
-    /* --- MOBIL-LAYOUT FOR SQUAWK FILTER TABEL (LISTE) via FLEXBOX --- */
+    /* --- NYT: Forbedret mobil-layout for SQUAWK FILTER --- */
     #squawk-filter-table {
         border: none;
     }
@@ -153,12 +160,13 @@ tr:last-child td {
     #squawk-filter-table td {
         display: block;
         width: 100%;
+        text-align: left;
     }
     #squawk-filter-table tr {
         display: flex;
-        flex-wrap: wrap; /* Tillader elementer at rykke til næste linje */
-        align-items: center; /* Vertikal centrering */
-        padding: 0.5rem 0;
+        flex-wrap: wrap;
+        align-items: flex-start; /* Justerer elementerne pænt i toppen */
+        padding: 0.75rem 0;
         border-bottom: 1px solid #eee;
     }
     #squawk-filter-table tr:last-child {
@@ -166,18 +174,26 @@ tr:last-child td {
     }
     #squawk-filter-table td {
         border: none;
-        padding: 2px 4px;
-        text-align: left;
+        padding: 0;
     }
+    /* Checkbox-styling */
+    #squawk-filter-table td:first-child {
+        width: 28px; /* Giver plads til checkbox'en */
+        padding-right: 8px;
+    }
+    /* Kode-styling (f.eks. "1202") */
     #squawk-filter-table td:nth-child(2) {
         font-weight: bold;
+        /* Får den til at fylde resten af linjen ved siden af checkbox */
+        flex: 1; 
     }
-    /* Gør den tredje celle (beskrivelsen) til en ny linje med indrykning */
+    /* Beskrivelses-styling (f.eks. "VFR svævefly") */
     #squawk-filter-table td:nth-child(3) {
-        flex-basis: 100%; /* Tvinger cellen til at tage fuld bredde og rykke ned */
-        padding-left: 35px; /* Rykker den ind under koden */
+        flex-basis: 100%; /* Tvinger den til at starte på en ny linje */
+        padding-left: 36px; /* Rykker den ind under koden (bredde af checkbox + padding) */
         font-size: 0.9em;
         color: #555;
+        padding-top: 4px;
     }
     /* Styling for kategori-overskrifter */
     #squawk-filter-table .category-header td {
