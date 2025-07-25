@@ -5,121 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Militær Fly Tracker</title>
 
-    <!-- Eksterne biblioteker (CSS) -->
+    <!-- Eksterne CSS Biblioteker -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://unpkg.com/mvp.css">
     
-    <!-- Vores egne, centrale styles -->
-    <style>
-        :root {
-            --brand-color: #007bff;
-            --danger-color: #d32f2f;
-        }
+    <!-- VORES EGET, CENTRALE STYLESHEET -->
+    <link rel="stylesheet" href="style.css">
 
-        /* --- GENERELT LAYOUT --- */
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start; 
-            min-height: 100vh;
-            margin: 0;
-            padding: 1rem 0;
-            text-align: center;
-        }
-        main {
-            width: 90%;
-            max-width: 1200px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 25px; /* Afstand mellem sektioner */
-        }
-        header, footer {
-             width: 90%;
-             max-width: 1200px;
-             margin-top: 20px;
-             text-align: center;
-        }
-
-        /* --- SEKTIONS-STYLING --- */
-        section {
-            width: 100%;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 1rem;
-        }
-        h3 {
-            margin-top: 0;
-            color: var(--brand-color);
-        }
-        
-        /* --- KORT --- */
-        #map {
-            width: 100%;
-            aspect-ratio: 16 / 9; 
-            max-height: 70vh; 
-            border-radius: 8px;
-            background-color: #f0f0f0;
-        }
-        
-        /* --- RESPONSIVE TABELLER --- */
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-        tr:last-child td {
-            border-bottom: none;
-        }
-        #squawkTableBody .category-header td {
-            font-weight: bold;
-            background-color: #f8f8f8;
-            padding-top: 15px;
-        }
-
-        /* --- NØD-ALARM BOKS --- */
-        #emergencyAlertBox {
-            visibility: hidden; /* Skjult som standard */
-            opacity: 0;
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            background-color: var(--danger-color);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            z-index: 2000;
-            font-size: 1.1em;
-            font-weight: bold;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-        #emergencyAlertBox.visible {
-            visibility: visible;
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-        #emergencyAlertBox .dismiss-button {
-            background: none; border: none; color: white;
-            font-size: 2em; line-height: 1; cursor: pointer; opacity: 0.8;
-        }
-        #emergencyAlertBox .dismiss-button:hover {
-            opacity: 1;
-        }
-    </style>
 </head>
 <body>
 
@@ -180,7 +72,7 @@
             console.log("✅ Alle HTML-sektioner indlæst.");
 
             // 2. Initialiser alle JavaScript-moduler
-            initAllJsModules();
+            await initAllJsModules();
             console.log("✅ Alle JS-moduler initialiseret.");
 
             // 3. Hent fly-data for første gang
@@ -206,12 +98,15 @@
             // Bruger Promise.all til at hente alt på samme tid
             const promises = sections.map(section => 
                 fetch(section.url)
-                    .then(response => response.text())
+                    .then(response => {
+                        if (!response.ok) throw new Error(`Kunne ikke finde ${section.url}`);
+                        return response.text();
+                    })
                     .then(data => {
                         const container = document.getElementById(section.id);
                         if (container) container.innerHTML = data;
                     })
-                    .catch(err => console.error(`❌ Fejl ved indlæsning af ${section.url}:`, err))
+                    .catch(err => console.error(`❌ Fejl ved indlæsning af sektion:`, err))
             );
             return Promise.all(promises);
         }
@@ -225,7 +120,7 @@
             if(typeof initializeCallsignFilter === "function") initializeCallsignFilter();
             if(typeof initializeEmergencyAlert === "function") initializeEmergencyAlert();
             
-            // Squawk-filteret er asynkront, da det henter en JSON-fil
+            // Squawk-filteret er asynkront, da det henter en JSON-fil, så vi bruger await.
             if(typeof initializeSquawkFilter === "function") {
                 await initializeSquawkFilter();
             }
@@ -268,8 +163,11 @@
 
             // 2. Anvend filtre
             let filteredData = globalFlightData.filter(flight => {
-                const callsignMatch = !activeCallsignFilter || (flight.flight && flight.flight.toLowerCase().includes(activeCallsignFilter));
-                const squawkMatch = userSelectedSquawks.size === 0 || userSelectedSquawks.has(flight.squawk);
+                const callsign = (flight.flight || '').toLowerCase();
+                const squawk = flight.squawk;
+
+                const callsignMatch = activeCallsignFilter === '' || callsign.includes(activeCallsignFilter);
+                const squawkMatch = userSelectedSquawks.size === 0 || userSelectedSquawks.has(squawk);
                 
                 return callsignMatch && squawkMatch;
             });
@@ -279,7 +177,7 @@
             if(typeof updateFlightTable === "function") updateFlightTable(filteredData);
         }
 
-        // Gør funktionen global, så filter-modulerne kan kalde den
+        // Gør nøglefunktioner og variabler globale, så de kan tilgås fra de separate moduler
         window.applyFiltersAndUpdate = applyFiltersAndUpdate;
         window.activeCallsignFilter = activeCallsignFilter;
         window.userSelectedSquawks = userSelectedSquawks;
