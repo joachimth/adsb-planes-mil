@@ -35,6 +35,7 @@ section {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 1rem;
+    box-sizing: border-box; /* Sikrer at padding ikke øger bredden */
 }
 h3 {
     margin-top: 0;
@@ -53,7 +54,7 @@ h3 {
 /* --- RESPONSIVE TABELLER (DESKTOP STANDARD) --- */
 .table-wrapper {
     width: 100%;
-    overflow-x: auto;
+    overflow-x: auto; /* Tillader horisontal scroll for brede tabeller */
 }
 table {
     width: 100%;
@@ -103,21 +104,20 @@ tr:last-child td {
 
 @media screen and (max-width: 768px) {
     
-    /* Gør kortet mere 'firkantet' på smalle skærme */
+    main {
+        width: 95%; /* Lidt mere bredde på små skærme */
+    }
+
     #map {
         aspect-ratio: 4 / 3;
     }
 
-    /* 
-      ÆNDRING: Omdanner KUN fly-tabellen (med id="flights") til 'kort'.
-      Dette forhindrer, at andre tabeller (som i filtrene) bliver ødelagt.
-    */
+    /* Omdan KUN fly-tabellen (med id="flights") til 'kort' */
     #flights {
         border: none;
     }
 
     #flights thead {
-        /* Skjul tabel-overskrifterne, da vi nu bruger labels i stedet */
         display: none;
     }
 
@@ -126,29 +126,37 @@ tr:last-child td {
         border: 1px solid #ddd;
         border-radius: 8px;
         margin-bottom: 1rem;
-        padding: 1rem;
+        padding: 0.5rem 1rem; /* Justeret padding */
     }
 
+    /* 
+      REVIDERET: Løser problemet med overlappende tekst.
+      Vi tilføjer en stor venstre-padding for at skabe plads til label'en.
+    */
     #flights td {
         display: block;
-        text-align: right;
-        padding: 8px 0;
+        text-align: right; /* Data-tekst til højre */
+        padding: 10px 0 10px 50%; /* Top, Højre, Bund, Venstre. Venstre padding giver plads */
         border-bottom: 1px dotted #ccc;
         position: relative;
+        min-height: 1.5em; /* Sikrer at cellen har højde, selv hvis data mangler */
     }
     
     #flights td:last-child {
         border-bottom: none;
     }
 
-    /* Den magiske del: Indsæt labels før hver data-celle */
+    /* 
+      REVIDERET: Placerer label'en pænt i den tomme plads skabt af padding.
+    */
     #flights td::before {
         content: attr(data-label);
         position: absolute;
-        left: 0;
+        left: 0; /* Starter helt til venstre i cellen */
+        top: 10px; /* Samme som top-padding */
+        width: 45%; /* Optager næsten halvdelen af bredden */
+        text-align: left; /* Label-tekst til venstre */
         font-weight: bold;
-        text-align: left;
-        padding-right: 1rem;
         color: #333;
     }
 }
