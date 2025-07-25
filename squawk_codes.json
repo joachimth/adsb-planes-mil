@@ -1,29 +1,41 @@
 {
-    "international": [
-        { "code": "0000", "description": "Ikke-diskret kode; bør ikke anvendes." },
-        { "code": "1200", "description": "VFR standardkode (USA/Canada)." },
-        { "code": "2000", "description": "IFR uden for radar dækning (ICAO, Oceanic Airspace)." },
-        { "code": "7000", "description": "VFR standardkode i Europa." },
-        { "code": "7500", "description": "Flykapring (ICAO)." },
-        { "code": "7600", "description": "Radio kommunikationssvigt (ICAO)." },
-        { "code": "7700", "description": "Generel nødsituation (ICAO)." },
-        { "code": "7777", "description": "Militær afskæringsoperationer (US/EU/NATO)." }
-    ],
-    "national_usa": [
-        { "code": "1201", "description": "VFR i Los Angeles Special Flight Rules Area (SFRA)." },
-        { "code": "1202", "description": "VFR svævefly uden ATC-kontakt." },
-        { "code": "1203", "description": "Formation flyvning (Kun lead squawker)." },
-        { "code": "1205", "description": "Helikoptere i Los Angeles eller DC SFRA-afgang." },
-        { "code": "1255", "description": "Brandbekæmpelse i USA." },
-        { "code": "1277", "description": "Søge- og redningsoperationer (SAR) i USA." },
-        { "code": "1276", "description": "ADIZ penetration uden kommunikation." },
-        { "code": "7400", "description": "UAV mistet forbindelse." },
-        { "code": "7710-7776", "description": "Militær træning & testkoder." }
-    ],
-    "military": [
-        { "code": "4000", "description": "Militære operationer (USA/EU/NATO)." },
-        { "code": "4400-4477", "description": "Militære reserverede områder." },
-        { "code": "7401-7477", "description": "Militære øvelser & UAV-missioner." },
-        { "code": "7610-7676", "description": "Specifikke militære missioner." }
-    ]
+  "categories": [
+    {
+      "name": "Nødsituationer (Altid aktiv)",
+      "codes": [
+        { "code": "7500", "description": "Ulovlig Handling (Kapring)", "checked": true, "disabled": true },
+        { "code": "7600", "description": "Tabt Kommunikation", "checked": true, "disabled": true },
+        { "code": "7700", "description": "Generel Nødsituation", "checked": true, "disabled": true }
+      ]
+    },
+    {
+      "name": "Internationale Standardkoder",
+      "codes": [
+        { "code": "1200", "description": "VFR standard (USA/Canada)", "checked": true, "disabled": false },
+        { "code": "7000", "description": "VFR standard (Europa)", "checked": true, "disabled": false },
+        { "code": "2000", "description": "IFR uden for radar dækning", "checked": false, "disabled": false },
+        { "code": "0000", "description": "Ikke-diskret kode (undgå)", "checked": false, "disabled": false }
+      ]
+    },
+    {
+      "name": "Militære Operationer",
+      "codes": [
+        { "code": "7777", "description": "Militær afvisning (interception)", "checked": true, "disabled": false },
+        { "code": "4000", "description": "Militære operationer (generelt)", "checked": true, "disabled": false },
+        { "code": "4400-4477", "description": "Militære reserverede områder", "checked": false, "disabled": false },
+        { "code": "7401-7477", "description": "Militære øvelser & UAV-missioner", "checked": false, "disabled": false },
+        { "code": "7610-7676", "description": "Specifikke militære missioner", "checked": false, "disabled": false }
+      ]
+    },
+    {
+      "name": "Nationale Koder (USA)",
+      "codes": [
+        { "code": "1255", "description": "Brandbekæmpelse", "checked": false, "disabled": false },
+        { "code": "1277", "description": "Søge- og redningsoperationer (SAR)", "checked": false, "disabled": false },
+        { "code": "7400", "description": "UAV mistet forbindelse", "checked": false, "disabled": false },
+        { "code": "1202", "description": "VFR svævefly", "checked": false, "disabled": false },
+        { "code": "1203", "description": "Formation flyvning", "checked": false, "disabled": false }
+      ]
+    }
+  ]
 }
