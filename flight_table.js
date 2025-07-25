@@ -1,66 +1,63 @@
-console.log("📌 flight_table.js indlæst - klar til opdatering af flytabel...");
+// Bekræfter at scriptet er indlæst korrekt.
+console.log("✅ flight_table.js er indlæst og klar.");
 
-let userPreferences = null;
+/**
+ * Opdaterer tabellen med flydata.
+ * Denne funktion gøres global, så den kan kaldes fra index.html.
+ * @param {Array} flightData - En liste af fly-objekter fra API'et.
+ */
+window.updateFlightTable = function(flightData) {
+    // Find kun "kroppen" af tabellen, som vi vil opdatere.
+    const tableBody = document.getElementById("flightTableBody");
 
-// Indlæs brugerpræferencer
-async function loadUserPreferences() {
-    try {
-        const response = await fetch('user_preferences.json');
-        if (!response.ok) {
-            throw new Error(`HTTP-fejl! Status: ${response.status}`);
-        }
-        userPreferences = await response.json();
-        console.log("✅ Brugerpræferencer indlæst for flytabel:", userPreferences);
-    } catch (error) {
-        console.error("❌ Fejl ved indlæsning af brugerpræferencer:", error);
-    }
-}
-
-// Opdater flytabel med præferencebaserede datafelter og squawk-filter
-function updateFlightTable(flightData) {
-    console.log("📌 Opdaterer flytabel...");
-
-    const container = document.getElementById('flightTableContainer');
-    if (!container) return;
-
-    if (flightData.length === 0) {
-        container.innerHTML = '<p>Ingen flydata tilgængelig.</p>';
+    // En sikkerhedsforanstaltning, hvis HTML-elementet ikke findes.
+    if (!tableBody) {
+        console.error("❌ Fejl: Kunne ikke finde elementet #flightTableBody.");
         return;
     }
 
-    if (!userPreferences) {
-        console.warn("⚠️ Brugerpræferencer ikke indlæst endnu. Viser standarddata.");
+    // 1. Håndter situationen, hvor der ingen flydata er.
+    if (!flightData || flightData.length === 0) {
+        // Indsæt en enkelt række med en informativ besked.
+        // 'colspan="6"' sikrer, at cellen strækker sig over alle 6 kolonner.
+        tableBody.innerHTML = '<tr><td colspan="6">Ingen militære fly fundet i øjeblikket.</td></tr>';
+        return; // Stop funktionen her.
     }
 
-    const fieldsToShow = userPreferences?.display_fields || ["callsign", "alt_baro", "gs", "lat", "lon"];
-    let filteredData = flightData;
-    
-    // Filtrer efter brugerens valgte squawk-koder
-    if (typeof userSelectedSquawks !== 'undefined' && userSelectedSquawks.size > 0) {
-        filteredData = flightData.filter(flight => 
-            userSelectedSquawks.has(flight.squawk) || userPreferences?.default_active_squawks.includes(flight.squawk)
-        );
-    }
-    
-    let tableHTML = '<table>';
-    tableHTML += '<thead><tr>' + fieldsToShow.map(field => `<th>${field}</th>`).join('') + '</tr></thead>';
-    tableHTML += '<tbody>';
+    // 2. Omdan flydata til HTML-rækker
+    // Vi bruger .map() til at lave en ny liste, der består af HTML-strenge.
+    const tableRowsHTML = flightData.map(flight => {
+        // Brug "||" til at indsætte en standardværdi, hvis data mangler.
+        const icao = flight.r || 'N/A';
+        // Nogle kaldesignaler har unødvendige mellemrum. .trim() fjerner dem.
+        const callsign = flight.flight ? flight.flight.trim() : 'N/A';
+        const squawk = flight.squawk || '----';
+        // Håndterer den specielle værdi "ground".
+        const altitude = flight.alt_baro === 'ground' ? 'På jorden' : (flight.alt_baro || 'N/A');
+        // Viser hastighed som et heltal.
+        const speed = flight.gs ? flight.gs.toFixed(0) : 'N/A'; 
+        const country = flight.cou || 'Ukendt';
 
-    filteredData.forEach(flight => {
-        tableHTML += '<tr>' + fieldsToShow.map(field => `<td>${flight[field] || 'N/A'}</td>`).join('') + '</tr>';
+        // Returner den færdige HTML for én række (<tr>).
+        return `
+            <tr>
+                <td>${icao.toUpperCase()}</td>
+                <td>${callsign}</td>
+                <td>${squawk}</td>
+                <td>${altitude}</td>
+                <td>${speed}</td>
+                <td>${country}</td>
+            </tr>
+        `;
     });
 
-    tableHTML += '</tbody></table>';
-    container.innerHTML = tableHTML;
-}
+    // 3. Indsæt alle rækker i tabellen på én gang.
+    // .join('') samler alle HTML-strengene i listen til én stor streng.
+    // Dette er meget mere effektivt end at opdatere tabellen for hver række.
+    tableBody.innerHTML = tableRowsHTML.join('');
+};
 
-// Indlæs præferencer før opdatering af tabel
-document.addEventListener("DOMContentLoaded", async () => {
-    await loadUserPreferences();
-    if (typeof window.updateFlightTable === "function" && window.globalFlightData) {
-        updateFlightTable(window.globalFlightData);
-    }
-});
-
-// Gør funktionen global
-window.updateFlightTable = updateFlightTable;
+// Vi fjerner logikken med 'user_preferences.json' fra denne fil for nu.
+// Hovedlogikken i `index.html` sørger for at hente data og kalde `updateFlightTable`
+// på det rigtige tidspunkt. Dette gør denne fil mere fokuseret på sin ene opgave:
+// at opdatere flytabellen.
