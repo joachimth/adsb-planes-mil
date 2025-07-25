@@ -35,7 +35,7 @@ section {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 1rem;
-    box-sizing: border-box; /* Sikrer at padding ikke øger bredden */
+    box-sizing: border-box;
 }
 h3 {
     margin-top: 0;
@@ -54,7 +54,7 @@ h3 {
 /* --- RESPONSIVE TABELLER (DESKTOP STANDARD) --- */
 .table-wrapper {
     width: 100%;
-    overflow-x: auto; /* Tillader horisontal scroll for brede tabeller */
+    overflow-x: auto;
 }
 table {
     width: 100%;
@@ -105,58 +105,95 @@ tr:last-child td {
 @media screen and (max-width: 768px) {
     
     main {
-        width: 95%; /* Lidt mere bredde på små skærme */
+        width: 95%;
     }
 
     #map {
         aspect-ratio: 4 / 3;
     }
 
-    /* Omdan KUN fly-tabellen (med id="flights") til 'kort' */
+    /* --- MOBIL-LAYOUT FOR FLY-TABEL (KORT) --- */
     #flights {
         border: none;
     }
-
     #flights thead {
         display: none;
     }
-
     #flights tr {
         display: block;
         border: 1px solid #ddd;
         border-radius: 8px;
         margin-bottom: 1rem;
-        padding: 0.5rem 1rem; /* Justeret padding */
+        padding: 0.5rem 1rem;
     }
-
-    /* 
-      REVIDERET: Løser problemet med overlappende tekst.
-      Vi tilføjer en stor venstre-padding for at skabe plads til label'en.
-    */
     #flights td {
         display: block;
-        text-align: right; /* Data-tekst til højre */
-        padding: 10px 0 10px 50%; /* Top, Højre, Bund, Venstre. Venstre padding giver plads */
+        text-align: right;
+        padding: 10px 0 10px 50%;
         border-bottom: 1px dotted #ccc;
         position: relative;
-        min-height: 1.5em; /* Sikrer at cellen har højde, selv hvis data mangler */
+        min-height: 1.5em;
     }
-    
     #flights td:last-child {
         border-bottom: none;
     }
-
-    /* 
-      REVIDERET: Placerer label'en pænt i den tomme plads skabt af padding.
-    */
     #flights td::before {
         content: attr(data-label);
         position: absolute;
-        left: 0; /* Starter helt til venstre i cellen */
-        top: 10px; /* Samme som top-padding */
-        width: 45%; /* Optager næsten halvdelen af bredden */
-        text-align: left; /* Label-tekst til venstre */
+        left: 0;
+        top: 10px;
+        width: 45%;
+        text-align: left;
         font-weight: bold;
         color: #333;
+    }
+
+    /* --- NYT: MOBIL-LAYOUT FOR SQUAWK FILTER TABEL (LISTE) --- */
+    #squawk-filter-table,
+    #squawk-filter-table tbody,
+    #squawk-filter-table tr,
+    #squawk-filter-table td {
+        display: block; /* Gør alt til blok-elementer, så de fylder hele bredden */
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    #squawk-filter-table tr {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    #squawk-filter-table tr:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    /* Nulstil standard celle-styling */
+    #squawk-filter-table td {
+        border: none;
+        padding: 4px 0; /* Lidt lodret luft */
+        text-align: left; /* Juster al tekst til venstre */
+    }
+
+    /* Gør koden/checkbox-linjen tydelig */
+    #squawk-filter-table td:first-child {
+        font-weight: bold;
+    }
+    
+    /* Gør beskrivelsen til en underlinje med indrykning */
+    #squawk-filter-table td:nth-child(2) {
+        padding-left: 28px; /* Indrykning så den flugter med teksten ovenover (forbi checkbox) */
+        font-size: 0.9em;
+        color: #555;
+    }
+    
+    /* Bevar kategori-overskrifternes udseende, men tilpas til mobil */
+    #squawk-filter-table .category-header td {
+        background-color: transparent;
+        padding-left: 0;
+        font-size: 1.1em;
+        color: var(--brand-color);
+        margin-top: 1rem;
     }
 }
