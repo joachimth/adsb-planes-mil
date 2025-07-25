@@ -1,29 +1,24 @@
-<!-- 
-  'table-wrapper' klassen sikrer, at tabellen kan scrolle horisontalt 
-  på små skærme, så den ikke "knækker" sidens layout.
--->
-<div class="table-wrapper">
-    <table id="flights">
-        <thead>
-            <tr>
-                <th>ICAO</th>
-                <th>Kaldesignal</th>
-                <th>Squawk</th>
-                <th>Højde (fod)</th>
-                <th>Hastighed (knob)</th>
-                <th>Land</th>
-            </tr>
-        </thead>
-        <!-- 
-          Denne 'tbody' (table body) med id="flightTableBody" er tom.
-          Vores JavaScript-fil (flight_table.js) vil finde dette id 
-          og indsætte rækker med flydata her.
-        -->
-        <tbody id="flightTableBody">
-            <tr>
-                <!-- Viser en midlertidig besked, mens data hentes -->
-                <td colspan="6">Henter og opdaterer flydata...</td>
-            </tr>
-        </tbody>
-    </table>
-</div>
+<!-- flight_table.html -->
+<section>
+    <h3>Live Flydata</h3>
+    <div class="table-wrapper">
+        <!-- ÆNDRING: Tabellen har nu fået et unikt ID, "flights" -->
+        <table id="flights">
+            <thead>
+                <tr>
+                    <th>ICAO</th>
+                    <th>Kaldesignal</th>
+                    <th>Squawk</th>
+                    <th>Højde (fod)</th>
+                    <th>Hastighed (knob)</th>
+                    <th>Land</th>
+                </tr>
+            </thead>
+            <tbody id="flightTableBody">
+                <tr>
+                    <td colspan="6">Henter og opdaterer flydata...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
