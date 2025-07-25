@@ -1,13 +1,6 @@
 {
     "map": {
-        "enabled": true,
-        "center": [55.450047, 19.746850],
-        "zoom": 3
-    },
-    "tables": {
-        "enabled": true
-    },
-    "display_fields": ["flight", "type", "alt_baro", "gs", "squawk"],
-    "default_active_squawks": ["2000", "7500", "7600", "7700", "7777"],
-    "emergency_squawks": ["7500", "7600", "7700", "7777", "0000"]
+        "center": [55.0, 19.0],
+        "zoom": 4
+    }
 }
