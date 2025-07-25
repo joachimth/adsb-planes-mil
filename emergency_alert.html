@@ -1,54 +1,8 @@
-<div id="emergencyAlertBox" style="display: none;">
-    <p>🚨 <strong>Nødsituation!</strong> Et fly har udsendt en nød-squawk!</p>
-    <button id="dismissAlert">Luk</button>
+<!-- 
+  Denne div er skjult som standard via CSS i index.html.
+  Vores JavaScript vil vise den, hvis der er en nødsituation.
+-->
+<div id="emergencyAlertBox">
+    <span class="message"></span> <!-- En tom span til den dynamiske besked -->
+    <button class="dismiss-button" title="Luk alarm">×</button>
 </div>
-
-<script>
-    function showEmergencyAlert() {
-        document.getElementById("emergencyAlertBox").style.display = "block";
-    }
-    
-    function hideEmergencyAlert() {
-        document.getElementById("emergencyAlertBox").style.display = "none";
-    }
-    
-    document.getElementById("dismissAlert").addEventListener("click", hideEmergencyAlert);
-
-    function checkForEmergencySquawks(flightData) {
-        if (flightData.some(flight => ["7500", "7600", "7700"].includes(flight.squawk))) {
-            showEmergencyAlert();
-        }
-    }
-    
-    document.addEventListener("DOMContentLoaded", () => {
-        if (window.globalFlightData) {
-            checkForEmergencySquawks(window.globalFlightData);
-        }
-    });
-</script>
-
-<style>
-    #emergencyAlertBox {
-        background-color: red;
-        color: white;
-        padding: 15px;
-        text-align: center;
-        font-size: 18px;
-        font-weight: bold;
-        position: fixed;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 1000;
-        border-radius: 5px;
-    }
-    #dismissAlert {
-        background-color: white;
-        color: red;
-        border: none;
-        padding: 5px 10px;
-        font-weight: bold;
-        cursor: pointer;
-        margin-left: 10px;
-    }
-</style>
