@@ -50,7 +50,7 @@ h3 {
     background-color: #f0f0f0;
 }
 
-/* --- RESPONSIVE TABELLER --- */
+/* --- RESPONSIVE TABELLER (DESKTOP STANDARD) --- */
 .table-wrapper {
     width: 100%;
     overflow-x: auto;
@@ -97,28 +97,28 @@ tr:last-child td {
 
 
 /* ================================================================== */
-/* === ADAPTIV STYLING FOR MOBILE (PORTRAIT) === */
+/* === ADAPTIV STYLING FOR MOBILE (PORTRAIT) ===                      */
+/* Disse regler gælder KUN for skærme smallere end 768px             */
 /* ================================================================== */
 
-@media (max-width: 768px) {
+@media screen and (max-width: 768px) {
     
     /* Gør kortet mere 'firkantet' på smalle skærme */
     #map {
         aspect-ratio: 4 / 3;
     }
 
-    /* Omdan fly-tabellen til 'kort' */
-    #flights {
-        border: none; /* Fjern den ydre kant */
+    /* Omdan KUN fly-tabellen til 'kort' */
+    #flight-table-container table {
+        border: none;
     }
 
-    #flights thead {
+    #flight-table-container thead {
         /* Skjul tabel-overskrifterne, da vi nu bruger labels i stedet */
         display: none;
     }
 
-    #flights tr {
-        /* Hver række bliver en blok/et kort */
+    #flight-table-container tr {
         display: block;
         border: 1px solid #ddd;
         border-radius: 8px;
@@ -126,30 +126,26 @@ tr:last-child td {
         padding: 1rem;
     }
 
-    #flights td {
-        /* Hver celle bliver en linje i kortet */
+    #flight-table-container td {
         display: block;
-        text-align: right; /* Juster data til højre */
+        text-align: right;
         padding: 8px 0;
-        border-bottom: 1px dotted #ccc; /* Finere adskillelse */
-        position: relative; /* Nødvendig for at placere label */
-    }
-
-    #flights tr:last-child td {
-        border-bottom: none; /* Fjern sidste kant i tabellen */
+        border-bottom: 1px dotted #ccc;
+        position: relative;
     }
     
-    #flights td:last-child {
-        border-bottom: none; /* Fjern sidste kant i hvert kort */
+    #flight-table-container td:last-child {
+        border-bottom: none;
     }
 
     /* Den magiske del: Indsæt labels før hver data-celle */
-    #flights td::before {
-        content: attr(data-label); /* Hent tekst fra 'data-label' attributten */
+    #flight-table-container td::before {
+        content: attr(data-label);
         position: absolute;
         left: 0;
         font-weight: bold;
         text-align: left;
         padding-right: 1rem;
+        color: #333;
     }
 }
