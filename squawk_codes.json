@@ -13,8 +13,8 @@
       "codes": [
         { "code": "1200", "description": "VFR standard (USA/Canada)", "checked": true, "disabled": false },
         { "code": "7000", "description": "VFR standard (Europa)", "checked": true, "disabled": false },
-        { "code": "2000", "description": "IFR uden for radar dækning", "checked": false, "disabled": false },
-        { "code": "0000", "description": "Ikke-diskret kode (undgå)", "checked": false, "disabled": false }
+        { "code": "2000", "description": "IFR uden for radar dækning", "checked": true, "disabled": false },
+        { "code": "0000", "description": "Ikke-diskret kode (undgå)", "checked": true, "disabled": false }
       ]
     },
     {
@@ -22,19 +22,19 @@
       "codes": [
         { "code": "7777", "description": "Militær afvisning (interception)", "checked": true, "disabled": false },
         { "code": "4000", "description": "Militære operationer (generelt)", "checked": true, "disabled": false },
-        { "code": "4400-4477", "description": "Militære reserverede områder", "checked": false, "disabled": false },
-        { "code": "7401-7477", "description": "Militære øvelser & UAV-missioner", "checked": false, "disabled": false },
-        { "code": "7610-7676", "description": "Specifikke militære missioner", "checked": false, "disabled": false }
+        { "code": "4400-4477", "description": "Militære reserverede områder", "checked": true, "disabled": false },
+        { "code": "7401-7477", "description": "Militære øvelser & UAV-missioner", "checked": true, "disabled": false },
+        { "code": "7610-7676", "description": "Specifikke militære missioner", "checked": true, "disabled": false }
       ]
     },
     {
       "name": "Nationale Koder (USA)",
       "codes": [
-        { "code": "1255", "description": "Brandbekæmpelse", "checked": false, "disabled": false },
-        { "code": "1277", "description": "Søge- og redningsoperationer (SAR)", "checked": false, "disabled": false },
-        { "code": "7400", "description": "UAV mistet forbindelse", "checked": false, "disabled": false },
-        { "code": "1202", "description": "VFR svævefly", "checked": false, "disabled": false },
-        { "code": "1203", "description": "Formation flyvning", "checked": false, "disabled": false }
+        { "code": "1255", "description": "Brandbekæmpelse", "checked": true, "disabled": false },
+        { "code": "1277", "description": "Søge- og redningsoperationer (SAR)", "checked": true, "disabled": false },
+        { "code": "7400", "description": "UAV mistet forbindelse", "checked": true, "disabled": false },
+        { "code": "1202", "description": "VFR svævefly", "checked": true, "disabled": false },
+        { "code": "1203", "description": "Formation flyvning", "checked": true, "disabled": false }
       ]
     }
   ]
