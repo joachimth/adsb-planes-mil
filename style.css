@@ -155,58 +155,53 @@ tr:last-child td {
     #squawk-filter-table tbody {
         display: block;
     }
-
+    
     #squawk-filter-table tr {
         display: flex;
-        flex-wrap: wrap;
-        align-items: center; /* Centrerer checkbox lodret ift. teksten */
+        align-items: flex-start; /* Juster checkbox og tekst i toppen */
         padding: 0.75rem 0;
         border-bottom: 1px solid #eee;
     }
     #squawk-filter-table tr:last-child {
         border-bottom: none;
     }
-
+    
     #squawk-filter-table td {
         padding: 0;
         border: none;
-        text-align: left;
+    }
+
+    /* Cellen med checkbox'en */
+    #squawk-filter-table td:first-child {
+        padding-right: 12px; /* Mellemrum mellem checkbox og tekst */
+    }
+
+    /* Cellen med alt tekst-indhold */
+    #squawk-filter-table td:last-child {
+        flex: 1; /* Tager resten af pladsen */
+    }
+
+    /* Selve koden/rangen */
+    #squawk-filter-table .code {
+        font-weight: bold;
     }
     
-    /* Definerer en container for alt tekst-indhold */
-    .text-content {
-        order: 2; /* Vises som nr. 2 (efter checkbox) */
-        flex: 1; /* Tager den resterende plads */
-        padding-left: 12px; /* Mellemrum til checkbox */
-    }
-
-    /* Styling af selve kode/range */
-    #squawk-filter-table td:not(:last-child):first-of-type {
-        font-weight: bold;
-        display: block;
-    }
-
-    /* Styling af beskrivelsen */
-    #squawk-filter-table td:nth-of-type(2) {
+    /* Selve beskrivelsen */
+    #squawk-filter-table .description {
         font-size: 0.95em;
         color: #555;
-        display: block;
+        padding-top: 2px;
     }
-    
-    /* Styling for cellen med checkbox'en */
-    #squawk-filter-table td:last-child {
-        order: 1; /* Vises som nr. 1 (først) */
-    }
-    
-    /* Særregel for kategori-overskrifter, så de ikke bliver påvirket */
+
+    /* Særregel for kategori-overskrifter */
     #squawk-filter-table .category-header {
         display: block;
         padding-top: 1rem;
     }
     #squawk-filter-table .category-header td {
-        order: 0; /* Nulstil rækkefølge */
         color: var(--brand-color);
         font-weight: bold;
         font-size: 1.1em;
+        padding: 0;
     }
 }
