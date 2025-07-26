@@ -13,12 +13,9 @@ window.initializeSquawkFilter = async function() {
         }
         const squawkData = await response.json();
         
-        // Når data er hentet, bygger vi tabellen og initialiserer filter-sættet.
         populateSquawkTable(squawkData);
         initializeSquawkSet(squawkData);
 
-        // Fortæl hovedprogrammet, at det er tid til at opdatere,
-        // da vi nu har indlæst standard-squawks.
         if (typeof window.applyFiltersAndUpdate === "function") {
             window.applyFiltersAndUpdate();
         }
@@ -41,28 +38,37 @@ function populateSquawkTable(squawkData) {
 
     let html = "";
     squawkData.categories.forEach(category => {
-        // Tilføj en overskrift-række for hver kategori.
         html += `
             <tr class="category-header">
-                <td colspan="3">${category.name}</td>
+                <td colspan="2">${category.name}</td>
             </tr>
         `;
-        // Tilføj en række for hver kode i kategorien.
+        
+        // --- VIGTIG ÆNDRING HER ---
+        // Vi ændrer HTML-strukturen for hver række for at få bedre kontrol med CSS.
         category.codes.forEach(entry => {
             const isChecked = entry.checked ? 'checked' : '';
             const isDisabled = entry.disabled ? 'disabled' : '';
+            
+            // Tjek om der er en beskrivelse. Hvis ikke, er div'en tom.
+            const descriptionHtml = entry.description ? `<div class="description">${entry.description}</div>` : '';
+
             html += `
                 <tr>
-                    <td>${entry.code}</td>
-                    <td>${entry.description}</td>
+                    <!-- Celle 1: Afkrydsningsfelt -->
                     <td><input type="checkbox" data-squawk="${entry.code}" ${isChecked} ${isDisabled}></td>
+                    
+                    <!-- Celle 2: Alt tekst-indhold -->
+                    <td>
+                        <div class="code">${entry.code}</div>
+                        ${descriptionHtml}
+                    </td>
                 </tr>
             `;
         });
     });
     tableBody.innerHTML = html;
 
-    // Sæt en enkelt, effektiv event listener på hele tabellen.
     tableBody.addEventListener('change', handleCheckboxChange);
 }
 
@@ -71,7 +77,6 @@ function populateSquawkTable(squawkData) {
  * @param {object} squawkData - Data hentet fra squawk_codes.json.
  */
 function initializeSquawkSet(squawkData) {
-    // Sørg for at det globale sæt eksisterer.
     if (!window.userSelectedSquawks) {
         window.userSelectedSquawks = new Set();
     }
@@ -90,7 +95,6 @@ function initializeSquawkSet(squawkData) {
  * @param {Event} event - Den 'change' event, der blev udløst.
  */
 function handleCheckboxChange(event) {
-    // Tjek om det, der blev ændret, rent faktisk var en checkbox.
     if (event.target.type === 'checkbox') {
         const squawk = event.target.dataset.squawk;
         
@@ -100,7 +104,6 @@ function handleCheckboxChange(event) {
             window.userSelectedSquawks.delete(squawk);
         }
 
-        // Kald den centrale opdateringsfunktion for at anvende ALLE filtre.
         if (typeof window.applyFiltersAndUpdate === "function") {
             window.applyFiltersAndUpdate();
         }
