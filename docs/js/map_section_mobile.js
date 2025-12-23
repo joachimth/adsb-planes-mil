@@ -64,9 +64,11 @@ export function initMap() {
         myMap = L.map('map', {
             zoomControl: true,
             attributionControl: true,
-            minZoom: 3,
-            maxZoom: 18
-        }).setView([55.0, 15.0], 5);
+            minZoom: 2,  // Allow zooming out to see whole continents
+            maxZoom: 18,
+            worldCopyJump: true,  // Handle wrapping across date line
+            maxBounds: null  // No bounds restriction
+        }).setView([55.0, 15.0], 4);  // Start at zoom 4 instead of 5
 
         // Add dark tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

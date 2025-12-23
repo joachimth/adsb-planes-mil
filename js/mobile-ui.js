@@ -206,6 +206,19 @@ function initBottomSheet() {
         }
     });
 
+    // Close when tapping outside (on map or overlay)
+    const mapContainer = document.querySelector('.map-container');
+    if (mapContainer) {
+        mapContainer.addEventListener('click', (e) => {
+            // Only close if clicking directly on map container, not on markers/popups
+            if (e.target === mapContainer || e.target.id === 'map') {
+                if (uiState.bottomSheetVisible) {
+                    closeBottomSheet();
+                }
+            }
+        });
+    }
+
     // Action buttons
     const actionFollow = document.getElementById('actionFollow');
     const actionShare = document.getElementById('actionShare');
@@ -323,6 +336,12 @@ export function showEmergencyAlert(aircraft) {
     const text = document.getElementById('emergencyAlertText');
 
     if (!alert || !text) return;
+
+    // Only show alert if aircraft has valid coordinates
+    if (!aircraft.lat || !aircraft.lon) {
+        console.log("⚠️ Nødfly uden position - springer alarm over");
+        return;
+    }
 
     const callsign = aircraft.flight?.trim() || aircraft.r || 'Ukendt';
     const squawk = aircraft.squawk || '----';
