@@ -1,22 +1,19 @@
-<!-- squawk_filter.html (Revideret og komplet) -->
-<section id="squawkFilterSection">
-    <h3>Filtrér efter Squawk Koder</h3>
-    
-    <!-- 
-      ÆNDRING: 
-      1. ID'et er ændret til "squawk-filter-table" for at matche vores nye mobil-CSS-regler.
-      2. Den overflødige <div class="table-wrapper"> er fjernet, da vi ikke længere ønsker horisontal scroll,
-         men i stedet et responsivt layout, der tilpasser sig skærmen.
-    -->
-    <table id="squawk-filter-table">
-        <tbody id="squawkTableBody">
-            <tr>
-                <!-- 
-                  Denne besked vises, mens squawk_codes.json indlæses.
-                  Colspan er justeret til 2, da vi har to kolonner (Kode/Checkbox og Beskrivelse).
-                -->
-                <td colspan="2">Indlæser filtermuligheder...</td>
-            </tr>
-        </tbody>
-    </table>
+<section aria-labelledby="squawk-filter-heading">
+    <h3 id="squawk-filter-heading">Squawk-kode Filter</h3>
+    <p class="help-text">Vælg hvilke typer fly du vil se på kortet</p>
+    <div class="table-wrapper">
+        <table id="squawk-filter-table" aria-label="Squawk-kode filtre">
+            <thead class="sr-only">
+                <tr>
+                    <th>Vælg</th>
+                    <th>Kode og Beskrivelse</th>
+                </tr>
+            </thead>
+            <tbody id="squawkTableBody">
+                <tr>
+                    <td colspan="2">Indlæser filtermuligheder...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </section>

@@ -3,221 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time tracker for militære og civile fly baseret på offentligt tilgængelige ADS-B data. Se live flypositioner på kort.">
+    <meta name="keywords" content="militære fly, fly tracker, ADS-B, live flydata, Danmark">
+    <meta name="author" content="Joachim Thirsbro">
+
+    <!-- Open Graph tags for social sharing -->
+    <meta property="og:title" content="Militær Fly Tracker">
+    <meta property="og:description" content="Real-time tracking af militære og civile fly">
+    <meta property="og:type" content="website">
+
     <title>Militær Fly Tracker</title>
 
     <!-- Eksterne CSS Biblioteker -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://unpkg.com/mvp.css">
-    
-    <!-- VORES EGET, CENTRALE STYLESHEET -->
-    <link rel="stylesheet" href="style.css">
 
+    <!-- Eget stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Status-bar med loading, fejl og info -->
+    <div id="status-bar" class="status-bar">
+        <div id="loading-indicator" class="loading-indicator">
+            <span class="spinner"></span>
+            <span>Henter data...</span>
+        </div>
+        <div id="error-message" class="error-message" role="alert"></div>
+        <div id="info-bar" class="info-bar">
+            <span id="aircraft-count">Viser 0 af 0 fly</span>
+            <span class="separator">•</span>
+            <span id="last-updated">Starter...</span>
+        </div>
+    </div>
 
-    <!-- Containere for de dynamisk indlæste HTML-sektioner -->
+    <!-- Header -->
     <header id="header-container"></header>
 
     <main>
-        <!-- Nød-alarmen placeres her, så den er en del af sidens flow -->
+        <!-- Nød-alarm -->
         <div id="emergency-alert-container"></div>
-        
-        <!-- Kortet er en fast del af strukturen -->
-        <div id="map"></div>
-        
+
+        <!-- Kort -->
+        <section id="map-section" aria-label="Interaktivt kort over flypositioner">
+            <div id="map" role="application" aria-label="Leaflet kort med fly-markører"></div>
+        </section>
+
         <!-- Filtre -->
         <div id="filter-container"></div>
         <div id="squawk-filter-container"></div>
-        
-        <!-- Fly-tabellen -->
+
+        <!-- Fly-tabel -->
         <div id="flight-table-container"></div>
     </main>
 
     <footer id="footer-container"></footer>
 
-
-    <!-- =================================================================== -->
-    <!-- JAVASCRIPT - Dirigenten og de eksterne biblioteker -->
-    <!-- =================================================================== -->
-
-    <!-- Leaflet JS (til kortet) -->
+    <!-- Leaflet JS (globalt bibliotek) -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Vores egne JS-moduler (defer sikrer korrekt indlæsningsrækkefølge) -->
-    <script src="map_section.js" defer></script>
-    <script src="flight_table.js" defer></script>
-    <script src="callsign_filter.js" defer></script>
-    <script src="squawk_filter.js" defer></script>
-    <script src="emergency_alert.js" defer></script>
-
-    <!-- DIRIGENTEN: Hovedlogikken, der styrer alt -->
-    <script>
-        document.addEventListener('DOMContentLoaded', main);
-
-        // --- GLOBALE VARIABLER (SIDENS TILSTAND) ---
-        let globalFlightData = [];
-        let activeCallsignFilter = '';
-        let userSelectedSquawks = new Set();
-        const apiProxyUrl = "https://corsproxy.io/?url=";
-        const apiUrl = apiProxyUrl + encodeURIComponent("https://api.adsb.lol/v2/mil");
-
-        /**
-         * Applikationens hovedfunktion. Kører når siden er klar.
-         */
-        async function main() {
-            console.log("✈️ DOM klar. Starter applikationen...");
-
-            // 1. Indlæs alle HTML-sektioner parallelt for hastighed
-            await loadAllHtmlSections();
-            console.log("✅ Alle HTML-sektioner indlæst.");
-
-            // 2. Initialiser alle JavaScript-moduler
-            await initAllJsModules();
-            console.log("✅ Alle JS-moduler initialiseret.");
-
-            // 3. Hent fly-data for første gang
-            await fetchFlightData();
-
-            // 4. Start den periodiske opdatering (hvert 30. sekund)
-            setInterval(fetchFlightData, 30000);
-        }
-
-        /**
-         * Indlæser alle HTML-filer ind i deres respektive containere.
-         */
-        function loadAllHtmlSections() {
-            const sections = [
-                { id: 'header-container', url: 'header.html' },
-                { id: 'emergency-alert-container', url: 'emergency_alert.html' },
-                { id: 'filter-container', url: 'filter_section.html' },
-                { id: 'squawk-filter-container', url: 'squawk_filter.html' },
-                { id: 'flight-table-container', url: 'flight_table.html' },
-                { id: 'footer-container', url: 'footer.html' }
-            ];
-
-            const promises = sections.map(section => 
-                fetch(section.url)
-                    .then(response => {
-                        if (!response.ok) throw new Error(`Kunne ikke finde ${section.url}`);
-                        return response.text();
-                    })
-                    .then(data => {
-                        const container = document.getElementById(section.id);
-                        if (container) container.innerHTML = data;
-                    })
-                    .catch(err => console.error(`❌ Fejl ved indlæsning af sektion:`, err))
-            );
-            return Promise.all(promises);
-        }
-        
-        /**
-         * Kalder initialiseringsfunktionerne fra alle vores JS-moduler.
-         */
-        async function initAllJsModules() {
-            if(typeof initMap === "function") initMap();
-            if(typeof initializeCallsignFilter === "function") initializeCallsignFilter();
-            if(typeof initializeEmergencyAlert === "function") initializeEmergencyAlert();
-            
-            if(typeof initializeSquawkFilter === "function") {
-                await initializeSquawkFilter();
-            }
-        }
-
-        /**
-         * Henter flydata fra API'et.
-         */
-        async function fetchFlightData() {
-            console.log("🔄 Henter flydata...");
-            try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error(`API-fejl: ${response.status}`);
-                
-                const data = await response.json();
-                globalFlightData = data.ac || [];
-                
-                console.log(`✅ ${globalFlightData.length} fly hentet.`);
-                applyFiltersAndUpdate();
-
-            } catch (error) {
-                console.error("❌ Kritisk fejl ved hentning af flydata:", error);
-            }
-        }
-
-        // --- NY HJÆLPEFUNKTION TIL SQUAWK RANGES ---
-        /**
-         * En specialiseret funktion, der tjekker, om en fly-squawk matcher
-         * de valgte filtre, inklusiv ranges som "4400-4477".
-         * @param {string} flightSquawk - Den enkelte squawk-kode fra et fly.
-         * @param {Set<string>} selectedSquawks - Sættet med brugerens valgte koder/ranges.
-         * @returns {boolean} - True hvis der er et match, ellers false.
-         */
-        function checkSquawkMatch(flightSquawk, selectedSquawks) {
-            if (!flightSquawk) return false;
-
-            // 1. Hurtigt tjek for direkte match (mest almindelige tilfælde)
-            if (selectedSquawks.has(flightSquawk)) {
-                return true;
-            }
-
-            // 2. Hvis der ikke var et direkte match, tjek om squawken passer ind i en range.
-            const flightSquawkNum = parseInt(flightSquawk, 10);
-            if (isNaN(flightSquawkNum)) {
-                return false; // Kan ikke sammenligne, hvis det ikke er et tal.
-            }
-
-            for (const selected of selectedSquawks) {
-                if (selected.includes('-')) {
-                    const [start, end] = selected.split('-').map(Number);
-                    if (!isNaN(start) && !isNaN(end) && flightSquawkNum >= start && flightSquawkNum <= end) {
-                        return true; // Match fundet i en range!
-                    }
-                }
-            }
-
-            // 3. Ingen match fundet efter at have tjekket alt.
-            return false;
-        }
-
-        /**
-         * DEN CENTRALE OPDATERINGSFUNKTION (OPDATERET)
-         * Anvender alle aktive filtre og opdaterer kort og tabel.
-         */
-        function applyFiltersAndUpdate() {
-            if (!globalFlightData) return;
-
-            // 1. Tjek for nød-alarmer på de UFILTREREDE data
-            if(typeof checkAndDisplayEmergencyAlert === "function") {
-                checkAndDisplayEmergencyAlert(globalFlightData);
-            }
-
-            // 2. Anvend filtre
-            let filteredData = globalFlightData.filter(flight => {
-                const callsign = (flight.flight || '').toLowerCase();
-                const squawk = flight.squawk;
-
-                // Tjek om flyet matcher kaldesignal-filteret.
-                const callsignMatch = activeCallsignFilter === '' || callsign.includes(activeCallsignFilter);
-
-                // Tjek om flyet matcher squawk-filteret VED BRUG AF VORES NYE HJÆLPEFUNKTION.
-                const squawkMatch = checkSquawkMatch(squawk, userSelectedSquawks);
-                
-                // Vis flyet, hvis det matcher BÅDE kaldesignal- OG squawk-filteret.
-                return callsignMatch && squawkMatch;
-            });
-
-            // 3. Opdater kort og tabel med de FILTREREDE data
-            if(typeof updateMap === "function") updateMap(filteredData);
-            if(typeof updateFlightTable === "function") updateFlightTable(filteredData);
-        }
-
-        // Gør nøglefunktioner og variabler globale, så de kan tilgås fra de separate moduler
-        window.applyFiltersAndUpdate = applyFiltersAndUpdate;
-        
-        // Disse variabler bliver manipuleret direkte af deres respektive moduler.
-        // Vi behøver ikke at om-definere dem her, men sørger for de er tilgængelige.
-        window.activeCallsignFilter = activeCallsignFilter;
-        window.userSelectedSquawks = userSelectedSquawks;
-
-    </script>
+    <!-- Vores applikation som ES6 modul -->
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
