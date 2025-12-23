@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Live radar for militære og specielle fly. Følg nødsituationer og militære operationer i realtid.">
+    <meta name="keywords" content="militære fly, fly tracker, ADS-B, live flydata, radar, nødsituationer">
+    <meta name="author" content="Joachim Thirsbro">
+    <meta name="theme-color" content="#0a0e1a">
+
+    <!-- PWA tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MilAir Watch">
+
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="MilAir Watch - Live Militær Fly Radar">
+    <meta property="og:description" content="Real-time tracking af militære fly og nødsituationer">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="./assets/og-image.png">
+
+    <title>MilAir Watch - Live Militær Fly Radar</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <!-- Custom Mobile-First CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://api.adsb.lol">
+</head>
+<body>
+    <!-- App Container -->
+    <div class="app-container">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <a href="#" class="app-logo" aria-label="MilAir Watch Hjem">
+                <span class="logo-icon">✈️</span>
+                <span>MilAir Watch</span>
+            </a>
+            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Åbn menu" aria-expanded="false">
+                <div class="hamburger-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </button>
+        </header>
+
+        <!-- Fullscreen Map -->
+        <div class="map-container">
+            <div id="map" role="application" aria-label="Interaktivt radar-kort"></div>
+        </div>
+
+        <!-- List View (Hidden by default) -->
+        <div class="list-view" id="listView" role="region" aria-label="Liste over fly">
+            <div class="list-header">
+                <div class="list-stats">
+                    <span class="list-count" id="listCount">Viser 0 fly</span>
+                    <select class="sort-select" id="sortSelect" aria-label="Sortér fly">
+                        <option value="emergency">Nød først</option>
+                        <option value="military">Militær først</option>
+                        <option value="altitude">Højde</option>
+                        <option value="speed">Hastighed</option>
+                    </select>
+                </div>
+            </div>
+            <div class="aircraft-list" id="aircraftList">
+                <!-- Aircraft cards inserted here by JS -->
+            </div>
+        </div>
+
+        <!-- Bottom Filter Bar -->
+        <nav class="filter-bar" id="filterBar" role="navigation" aria-label="Filtre">
+            <button class="filter-btn military active" id="filterMilitary"
+                    aria-pressed="true" aria-label="Vis militære fly">
+                <span class="filter-btn-icon">🪖</span>
+                <span class="filter-btn-label">Militær</span>
+                <span class="filter-badge" id="militaryCount">0</span>
+            </button>
+            <button class="filter-btn emergency active" id="filterEmergency"
+                    aria-pressed="true" aria-label="Vis nødsituationer">
+                <span class="filter-btn-icon">🚨</span>
+                <span class="filter-btn-label">Nød</span>
+                <span class="filter-badge" id="emergencyCount" style="display: none;">0</span>
+            </button>
+            <button class="filter-btn special active" id="filterSpecial"
+                    aria-pressed="true" aria-label="Vis specielle fly">
+                <span class="filter-btn-icon">⭐</span>
+                <span class="filter-btn-label">Special</span>
+                <span class="filter-badge" id="specialCount">0</span>
+            </button>
+            <button class="filter-btn list-view" id="filterList"
+                    aria-pressed="false" aria-label="Skift til listevisning">
+                <span class="filter-btn-icon">📋</span>
+                <span class="filter-btn-label">Liste</span>
+            </button>
+        </nav>
+
+        <!-- Emergency Alert -->
+        <div class="emergency-alert" id="emergencyAlert" role="alert" aria-live="assertive">
+            <div class="emergency-alert-icon">🚨</div>
+            <div class="emergency-alert-content">
+                <h3 class="emergency-alert-title">NØDSITUATION DETEKTERET</h3>
+                <p class="emergency-alert-text" id="emergencyAlertText">
+                    Fly med nød-squawk registreret
+                </p>
+            </div>
+            <button class="emergency-close-btn" id="emergencyCloseBtn" aria-label="Luk alarm">
+                ×
+            </button>
+        </div>
+
+        <!-- Status Indicator -->
+        <div class="status-indicator" id="statusIndicator">
+            <div class="status-spinner"></div>
+            <span id="statusText">Henter data...</span>
+        </div>
+
+        <!-- Bottom Sheet (Aircraft Details) -->
+        <aside class="bottom-sheet" id="bottomSheet" role="dialog" aria-modal="false" aria-label="Flydetaljer">
+            <div class="bottom-sheet-handle" id="bottomSheetHandle">
+                <div class="handle-bar"></div>
+            </div>
+            <div class="bottom-sheet-content">
+                <div class="aircraft-header">
+                    <h2 class="aircraft-callsign" id="detailCallsign">---</h2>
+                    <span class="aircraft-status-badge military" id="detailStatusBadge">Militær</span>
+                </div>
+
+                <div class="aircraft-details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Højde</div>
+                        <div class="detail-value" id="detailAltitude">
+                            ---<span class="detail-unit">fod</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Hastighed</div>
+                        <div class="detail-value" id="detailSpeed">
+                            ---<span class="detail-unit">knob</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Squawk</div>
+                        <div class="detail-value" id="detailSquawk">----</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ICAO</div>
+                        <div class="detail-value" id="detailIcao">------</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Land</div>
+                        <div class="detail-value" id="detailCountry">---</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Afstand</div>
+                        <div class="detail-value" id="detailDistance">
+                            ---<span class="detail-unit">km</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="aircraft-actions">
+                    <button class="action-btn secondary" id="actionFollow">
+                        <span>📍</span>
+                        <span>Følg fly</span>
+                    </button>
+                    <button class="action-btn secondary" id="actionShare">
+                        <span>🔗</span>
+                        <span>Del</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Side Menu Overlay -->
+        <div class="menu-overlay" id="menuOverlay"></div>
+
+        <!-- Side Menu -->
+        <nav class="side-menu" id="sideMenu" role="navigation" aria-label="Hovedmenu">
+            <div class="menu-header">
+                <h2 class="menu-title">Indstillinger</h2>
+            </div>
+            <div class="menu-content">
+                <!-- Settings Section -->
+                <section class="menu-section">
+                    <h3 class="menu-section-title">Præferencer</h3>
+
+                    <div class="menu-item">
+                        <span class="menu-item-icon">🌙</span>
+                        <div class="menu-item-text">
+                            <span class="menu-item-label">Mørk Tilstand</span>
+                            <span class="menu-item-desc">Altid aktiveret (radar stil)</span>
+                        </div>
+                        <div class="toggle-switch active" id="toggleDark" role="switch" aria-checked="true"></div>
+                    </div>
+
+                    <div class="menu-item">
+                        <span class="menu-item-icon">📍</span>
+                        <div class="menu-item-text">
+                            <span class="menu-item-label">Min Placering</span>
+                            <span class="menu-item-desc">Vis afstand til fly</span>
+                        </div>
+                        <div class="toggle-switch" id="toggleLocation" role="switch" aria-checked="false"></div>
+                    </div>
+
+                    <div class="menu-item">
+                        <span class="menu-item-icon">🔔</span>
+                        <div class="menu-item-text">
+                            <span class="menu-item-label">Notifikationer</span>
+                            <span class="menu-item-desc">Ved nødsituationer</span>
+                        </div>
+                        <div class="toggle-switch" id="toggleNotifications" role="switch" aria-checked="false"></div>
+                    </div>
+                </section>
+
+                <!-- Info Section -->
+                <section class="menu-section">
+                    <h3 class="menu-section-title">Information</h3>
+
+                    <a href="#about" class="menu-item" id="menuAbout">
+                        <span class="menu-item-icon">ℹ️</span>
+                        <div class="menu-item-text">
+                            <span class="menu-item-label">Om MilAir Watch</span>
+                            <span class="menu-item-desc">Om dette projekt</span>
+                        </div>
+                    </a>
+
+                    <a href="#squawks" class="menu-item" id="menuSquawks">
+                        <span class="menu-item-icon">📡</span>
+                        <div class="menu-item-text">
+                            <span class="menu-item-label">Squawk Koder</span>
+                            <span class="menu-item-desc">Hvad betyder koderne?</span>
+                        </div>
+                    </a>
+
+                    <a href="#data-source" class="menu-item" id="menuDataSource">
+                        <span class="menu-item-icon">🌐</span>
+                        <div class="menu-item-text">
+                            <span class="menu-item-label">Datakilde</span>
+                            <span class="menu-item-desc">ADSB.lol API</span>
+                        </div>
+                    </a>
+
+                    <a href="https://github.com/joachimth/adsb-planes-mil" target="_blank" rel="noopener" class="menu-item">
+                        <span class="menu-item-icon">💻</span>
+                        <div class="menu-item-text">
+                            <span class="menu-item-label">GitHub</span>
+                            <span class="menu-item-desc">Se kildekoden</span>
+                        </div>
+                    </a>
+                </section>
+
+                <!-- Legal Section -->
+                <section class="menu-section">
+                    <p style="font-size: 12px; color: var(--text-muted); padding: 0 var(--space-md);">
+                        Data fra offentlige ADS-B kilder. Brug på eget ansvar.
+                        Ikke til navigation eller sikkerhedskritiske formål.
+                    </p>
+                    <p style="font-size: 12px; color: var(--text-muted); padding: 0 var(--space-md); margin-top: 8px;">
+                        © 2025 Joachim Thirsbro • MIT License
+                    </p>
+                </section>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- App JavaScript (ES6 Module) -->
+    <script type="module" src="js/main-mobile.js"></script>
+</body>
+</html>
