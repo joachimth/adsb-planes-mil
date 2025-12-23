@@ -1,8 +1,16 @@
-<!-- 
-  Denne div er skjult som standard via CSS i index.html.
-  Vores JavaScript vil vise den, hvis der er en nødsituation.
--->
-<div id="emergencyAlertBox">
-    <span class="message"></span> <!-- En tom span til den dynamiske besked -->
-    <button class="dismiss-button" title="Luk alarm">×</button>
+<div
+    id="emergencyAlertBox"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+    class="emergency-alert"
+>
+    <span class="message">Nødsituation detekteret</span>
+    <button
+        class="dismiss-button"
+        aria-label="Luk nød-alarm"
+        type="button"
+    >
+        ×
+    </button>
 </div>

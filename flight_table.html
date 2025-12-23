@@ -1,22 +1,20 @@
-<!-- flight_table.html -->
-<section>
-    <h3>Live Flydata</h3>
+<section aria-labelledby="flight-table-heading">
+    <h3 id="flight-table-heading">Live Flydata</h3>
     <div class="table-wrapper">
-        <!-- ÆNDRING: Tabellen har nu fået et unikt ID, "flights" -->
-        <table id="flights">
+        <table id="flights" aria-label="Liste over fly">
             <thead>
                 <tr>
-                    <th>ICAO</th>
-                    <th>Kaldesignal</th>
-                    <th>Squawk</th>
-                    <th>Højde (fod)</th>
-                    <th>Hastighed (knob)</th>
-                    <th>Land</th>
+                    <th scope="col">ICAO</th>
+                    <th scope="col">Kaldesignal</th>
+                    <th scope="col">Squawk</th>
+                    <th scope="col">Højde (fod)</th>
+                    <th scope="col">Hastighed (knob)</th>
+                    <th scope="col">Land</th>
                 </tr>
             </thead>
             <tbody id="flightTableBody">
                 <tr>
-                    <td colspan="6">Henter og opdaterer flydata...</td>
+                    <td colspan="6" class="loading-row">Henter flydata...</td>
                 </tr>
             </tbody>
         </table>

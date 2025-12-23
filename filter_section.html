@@ -1,10 +1,16 @@
-<section>
-    <h3>Filtre</h3>
-    <label for="callsignFilterInput">Filtrér efter kaldesignal:</label>
-    
-    <!-- 
-      Dette input-felt vil automatisk filtrere listen, hver gang brugeren taster.
-      Logikken til dette vil ligge i callsign_filter.js 
-    -->
-    <input type="text" id="callsignFilterInput" placeholder="F.eks. ROKY, FAF...">
+<section aria-labelledby="filter-heading">
+    <h3 id="filter-heading">Filtre</h3>
+    <div class="filter-group">
+        <label for="callsignFilterInput">Filtrér efter kaldesignal:</label>
+        <input
+            type="search"
+            id="callsignFilterInput"
+            placeholder="F.eks. ROKY, FAF..."
+            aria-describedby="filter-help"
+            autocomplete="off"
+        >
+        <small id="filter-help" class="help-text">
+            Søg efter fly baseret på kaldesignal
+        </small>
+    </div>
 </section>
