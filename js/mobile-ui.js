@@ -331,8 +331,14 @@ function populateBottomSheet(aircraft) {
 
     // Squawk
     const squawkCode = aircraft.squawk || '----';
-    const squawkInfo = getSquawkInfo(squawkCode);
     const squawkEl = document.getElementById('detailSquawk');
+
+    let squawkInfo = null;
+    try {
+        squawkInfo = getSquawkInfo(squawkCode);
+    } catch (err) {
+        // Squawk lookup not available - just show code
+    }
 
     if (squawkInfo && squawkInfo.description) {
         squawkEl.innerHTML = `
@@ -391,7 +397,15 @@ export function showEmergencyAlert(aircraft) {
     const callsign = aircraft.flight?.trim() || aircraft.r || 'Ukendt';
     const squawk = aircraft.squawk || '----';
 
-    text.textContent = `${callsign} udsender ${squawk} (${getSquawkDescription(squawk)})`;
+    let squawkDesc = '';
+    try {
+        const desc = getSquawkDescription(squawk);
+        squawkDesc = desc ? ` (${desc})` : '';
+    } catch (err) {
+        // Squawk lookup not available
+    }
+
+    text.textContent = `${callsign} udsender ${squawk}${squawkDesc}`;
 
     alert.classList.add('visible');
 

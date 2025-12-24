@@ -40,8 +40,11 @@ async function main() {
         initFilterBar(onFilterChange, onListViewToggle);
         initListView();
 
-        // Load squawk codes database
-        await loadSquawkCodes();
+        // Load squawk codes database (non-blocking)
+        loadSquawkCodes().catch(err => {
+            console.warn("⚠️ Kunne ikke indlæse squawk koder:", err);
+            // App fortsætter uden squawk beskrivelser
+        });
 
         // Listen for sort changes
         document.addEventListener('sortChanged', () => {
