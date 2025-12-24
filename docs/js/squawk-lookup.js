@@ -16,14 +16,16 @@ export async function loadSquawkCodes() {
     try {
         const response = await fetch('squawk_codes.json');
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            console.warn(`⚠️ Kunne ikke hente squawk_codes.json: HTTP ${response.status}`);
+            return null;
         }
         const data = await response.json();
         squawkDatabase = data;
         console.log("✅ Squawk koder database indlæst");
         return data;
     } catch (error) {
-        console.error("❌ Fejl ved indlæsning af squawk koder:", error);
+        console.warn("⚠️ Squawk koder ikke tilgængelige:", error.message);
+        // Return null så appen fortsætter uden beskrivelser
         return null;
     }
 }
