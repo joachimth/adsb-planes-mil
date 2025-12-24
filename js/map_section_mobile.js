@@ -85,6 +85,11 @@ export function initMap() {
             centerOnAircraft(followedAircraft);
         });
 
+        // Listen for unfollow event
+        document.addEventListener('unfollowAircraft', () => {
+            followedAircraft = null;
+        });
+
         console.log("✅ Kort initialiseret.");
 
     } catch (error) {
@@ -179,4 +184,18 @@ function centerOnAircraft(aircraft) {
  */
 export function getMap() {
     return myMap;
+}
+
+/**
+ * Check if currently following an aircraft
+ */
+export function isFollowingAircraft() {
+    return followedAircraft !== null;
+}
+
+/**
+ * Get currently followed aircraft
+ */
+export function getFollowedAircraft() {
+    return followedAircraft;
 }

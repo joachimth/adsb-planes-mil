@@ -10,7 +10,8 @@ const uiState = {
     bottomSheetVisible: false,
     menuVisible: false,
     selectedAircraft: null,
-    userLocation: null
+    userLocation: null,
+    isFollowingAircraft: false
 };
 
 /**
@@ -253,6 +254,9 @@ export function openBottomSheet(aircraft) {
     // Populate data
     populateBottomSheet(aircraft);
 
+    // Update follow button state
+    updateFollowButton();
+
     // Show bottom sheet
     bottomSheet.classList.add('visible');
     bottomSheet.style.transform = '';
@@ -266,6 +270,34 @@ export function closeBottomSheet() {
     uiState.selectedAircraft = null;
 
     bottomSheet.classList.remove('visible');
+}
+
+/**
+ * Update follow button text and state
+ */
+function updateFollowButton() {
+    const followBtn = document.getElementById('actionFollow');
+    if (!followBtn || !uiState.selectedAircraft) return;
+
+    // Check if this aircraft is being followed
+    const isFollowing = uiState.isFollowingAircraft &&
+                       uiState.selectedAircraft.r === getFollowedAircraftId();
+
+    if (isFollowing) {
+        followBtn.innerHTML = '<span>⏹️</span><span>Stop følge</span>';
+        followBtn.classList.add('following');
+    } else {
+        followBtn.innerHTML = '<span>📍</span><span>Følg fly</span>';
+        followBtn.classList.remove('following');
+    }
+}
+
+/**
+ * Get ID of currently followed aircraft
+ */
+function getFollowedAircraftId() {
+    // This will be updated when we integrate with map module
+    return window._followedAircraftId || null;
 }
 
 function populateBottomSheet(aircraft) {
@@ -447,10 +479,38 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
    ======================================== */
 
 function followAircraft(aircraft) {
-    // Dispatch custom event to center map on aircraft
-    const event = new CustomEvent('followAircraft', { detail: aircraft });
-    document.dispatchEvent(event);
-    closeBottomSheet();
+    if (!aircraft) return;
+
+    // Check if already following this aircraft
+    const isFollowing = uiState.isFollowingAircraft &&
+                       window._followedAircraftId === aircraft.r;
+
+    if (isFollowing) {
+        // Unfollow
+        uiState.isFollowingAircraft = false;
+        window._followedAircraftId = null;
+        const event = new CustomEvent('unfollowAircraft');
+        document.dispatchEvent(event);
+        console.log("⏹️ Stopper med at følge fly");
+
+        // Update button
+        updateFollowButton();
+    } else {
+        // Follow
+        uiState.isFollowingAircraft = true;
+        window._followedAircraftId = aircraft.r;
+        const event = new CustomEvent('followAircraft', { detail: aircraft });
+        document.dispatchEvent(event);
+        console.log(`📍 Følger nu ${aircraft.flight?.trim() || aircraft.r}`);
+
+        // Update button
+        updateFollowButton();
+
+        // Close bottom sheet after a short delay
+        setTimeout(() => {
+            closeBottomSheet();
+        }, 300);
+    }
 }
 
 function shareAircraft(aircraft) {
@@ -539,24 +599,36 @@ Data opdateres hvert 30. sekund.`);
 }
 
 function showSquawksModal() {
-    alert(`Squawk Koder - Hvad betyder de?
+    alert(`Squawk Koder - Forklaring
 
-NØDSITUATIONER:
+NØDSITUATIONER (Altid aktiv):
 7700 - Generel nødsituation
 7600 - Tabt kommunikation
 7500 - Ulovlig handling (kapring)
 
-MILITÆRE KODER:
-7777 - Militær afvisning
-4400-4477 - Militære områder
-7401-7477 - Militære øvelser & UAV
+MILITÆRE OPERATIONER:
+7777 - Militær afvisning (interception)
+4000 - Militære operationer (generelt)
+4400-4477 - Militære reserverede områder
+7401-7477 - Militære øvelser & UAV-missioner
+7610-7676 - Specifikke militære missioner
+4575 - NATO AWACS-flyvning
 
-SPECIELLE KODER:
-1200 - VFR standard (USA)
+SPECIELLE OPERATIONER:
+0021-0022 - VFR lavhøjde (Tyskland)
+0030 - Testflyvning
+0033 - Faldskærmsudspring (Europa)
+1200 - VFR standard (USA/Canada)
+1255 - Brandbekæmpelse
+1277 - Søge- og redningsoperationer (SAR)
 7000 - VFR standard (Europa)
-1277 - SAR operationer
+7400 - UAV mistet forbindelse
 
-Se fuld liste i indstillinger.`);
+RANGES:
+3000-3777 - Diverse specialmissioner
+5000-5377 - Operationelle militærflyvninger
+
+Kilde: Offentligt tilgængelige ADS-B data`);
 }
 
 function showDataSourceModal() {

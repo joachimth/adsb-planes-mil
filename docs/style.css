@@ -517,6 +517,12 @@ body {
     border: 1px solid var(--border-subtle);
 }
 
+.action-btn.following {
+    background: var(--accent-primary);
+    color: var(--radar-bg);
+    border: none;
+}
+
 /* ========================================
    HAMBURGER MENU (Slide-in)
    ======================================== */
