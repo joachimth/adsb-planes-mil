@@ -1,0 +1,253 @@
+/**
+ * Aircraft Information Module - MilAir Watch
+ * Henter flyfotos og type-information fra eksterne kilder
+ */
+
+console.log("✅ aircraft-info.js er indlæst.");
+
+// Cache for aircraft info to minimize API calls
+const aircraftCache = new Map();
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 timer
+
+/**
+ * Get aircraft information by ICAO hex code
+ * @param {string} icao - ICAO hex code (e.g., "43C123")
+ * @returns {Promise<Object|null>} - Aircraft info or null
+ */
+export async function getAircraftInfo(icao) {
+    if (!icao) return null;
+
+    // Check cache first
+    const cached = aircraftCache.get(icao);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        return cached.data;
+    }
+
+    try {
+        // Try to fetch from ADS-B Exchange API
+        const adsbData = await fetchFromADSBExchange(icao);
+
+        if (adsbData) {
+            const info = {
+                icao: icao,
+                registration: adsbData.r || null,
+                type: adsbData.t || null,
+                description: adsbData.desc || null,
+                year: adsbData.year || null,
+                photoUrl: null,
+                externalLinks: buildExternalLinks(icao, adsbData.r)
+            };
+
+            // Try to get photo URL
+            if (adsbData.r) {
+                info.photoUrl = await getAircraftPhoto(adsbData.r, icao);
+            }
+
+            // Cache the result
+            aircraftCache.set(icao, {
+                data: info,
+                timestamp: Date.now()
+            });
+
+            return info;
+        }
+
+        // Fallback: return basic info with external links
+        const fallbackInfo = {
+            icao: icao,
+            registration: null,
+            type: null,
+            description: null,
+            photoUrl: null,
+            externalLinks: buildExternalLinks(icao, null)
+        };
+
+        return fallbackInfo;
+
+    } catch (error) {
+        console.warn(`⚠️ Kunne ikke hente info for ${icao}:`, error.message);
+        return {
+            icao: icao,
+            externalLinks: buildExternalLinks(icao, null)
+        };
+    }
+}
+
+/**
+ * Fetch aircraft data from ADS-B Exchange
+ * @param {string} icao - ICAO hex code
+ * @returns {Promise<Object|null>}
+ */
+async function fetchFromADSBExchange(icao) {
+    try {
+        // ADS-B Exchange public API endpoint
+        const url = `https://globe.adsbexchange.com/db/${icao}.json`;
+
+        const response = await fetch(url, {
+            headers: { 'Accept': 'application/json' },
+            signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+
+        if (!response.ok) {
+            console.warn(`⚠️ ADS-B Exchange API: HTTP ${response.status} for ${icao}`);
+            return null;
+        }
+
+        const data = await response.json();
+        return data;
+
+    } catch (error) {
+        console.warn(`⚠️ ADS-B Exchange fetch fejl:`, error.message);
+        return null;
+    }
+}
+
+/**
+ * Try to get aircraft photo URL
+ * @param {string} registration - Aircraft registration (e.g., "N12345")
+ * @param {string} icao - ICAO hex code fallback
+ * @returns {Promise<string|null>}
+ */
+async function getAircraftPhoto(registration, icao) {
+    if (!registration) return null;
+
+    try {
+        // Planespotters.net photo (construct URL)
+        // Format: https://www.planespotters.net/airframe/{registration}
+        const photoUrl = `https://api.planespotters.net/pub/photos/hex/${icao}`;
+
+        // Try to verify the photo exists
+        const response = await fetch(photoUrl, {
+            method: 'HEAD',
+            signal: AbortSignal.timeout(3000)
+        }).catch(() => null);
+
+        if (response && response.ok) {
+            return photoUrl;
+        }
+
+        // Fallback: return null, we'll show external link instead
+        return null;
+
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * Build external links for aircraft lookups
+ * @param {string} icao - ICAO hex code
+ * @param {string|null} registration - Aircraft registration if available
+ * @returns {Object} - Links object
+ */
+function buildExternalLinks(icao, registration) {
+    const links = {
+        flightradar24: `https://www.flightradar24.com/data/aircraft/${registration || icao}`,
+        adsbexchange: `https://globe.adsbexchange.com/?icao=${icao}`,
+        planespotters: registration
+            ? `https://www.planespotters.net/search?q=${registration}`
+            : `https://www.planespotters.net/hex/${icao}`,
+        jetphotos: registration
+            ? `https://www.jetphotos.com/registration/${registration}`
+            : null
+    };
+
+    return links;
+}
+
+/**
+ * Get aircraft type icon based on aircraft type
+ * @param {string|null} type - Aircraft type code
+ * @returns {string} - Icon emoji or symbol
+ */
+export function getAircraftTypeIcon(type) {
+    if (!type) return '✈️';
+
+    const typeUpper = type.toUpperCase();
+
+    // Helicopter
+    if (typeUpper.includes('H60') || typeUpper.includes('UH-') ||
+        typeUpper.includes('AH-') || typeUpper.includes('CH-') ||
+        typeUpper.includes('HH-') || typeUpper.includes('MH-')) {
+        return '🚁';
+    }
+
+    // Fighter jets
+    if (typeUpper.includes('F-16') || typeUpper.includes('F-35') ||
+        typeUpper.includes('F/A-18') || typeUpper.includes('F15') ||
+        typeUpper.includes('EUROFIGHTER') || typeUpper.includes('TYPHOON') ||
+        typeUpper.includes('GRIPEN') || typeUpper.includes('RAFALE')) {
+        return '🛩️';
+    }
+
+    // Transport/Cargo
+    if (typeUpper.includes('C-130') || typeUpper.includes('C-17') ||
+        typeUpper.includes('C-5') || typeUpper.includes('A400M') ||
+        typeUpper.includes('HERCULES') || typeUpper.includes('GALAXY')) {
+        return '🛫';
+    }
+
+    // Tanker
+    if (typeUpper.includes('KC-') || typeUpper.includes('TANKER')) {
+        return '⛽';
+    }
+
+    // Surveillance/Reconnaissance
+    if (typeUpper.includes('AWACS') || typeUpper.includes('E-') ||
+        typeUpper.includes('RC-') || typeUpper.includes('P-8')) {
+        return '📡';
+    }
+
+    // Default aircraft
+    return '✈️';
+}
+
+/**
+ * Get detailed aircraft category based on type
+ * @param {string|null} type - Aircraft type code
+ * @returns {string} - Category name in Danish
+ */
+export function getAircraftCategory(type) {
+    if (!type) return 'Ukendt';
+
+    const typeUpper = type.toUpperCase();
+
+    if (typeUpper.includes('H60') || typeUpper.includes('H-') ||
+        typeUpper.includes('HELI') || typeUpper.includes('UH-') ||
+        typeUpper.includes('AH-') || typeUpper.includes('CH-')) {
+        return 'Helikopter';
+    }
+
+    if (typeUpper.includes('F-') || typeUpper.includes('FIGHTER') ||
+        typeUpper.includes('EUROFIGHTER') || typeUpper.includes('GRIPEN')) {
+        return 'Kampfly';
+    }
+
+    if (typeUpper.includes('C-') || typeUpper.includes('TRANSPORT') ||
+        typeUpper.includes('CARGO') || typeUpper.includes('A400M')) {
+        return 'Transportfly';
+    }
+
+    if (typeUpper.includes('KC-') || typeUpper.includes('TANKER')) {
+        return 'Tankfly';
+    }
+
+    if (typeUpper.includes('AWACS') || typeUpper.includes('E-') ||
+        typeUpper.includes('SURVEILLANCE') || typeUpper.includes('P-')) {
+        return 'Overvågningsfly';
+    }
+
+    if (typeUpper.includes('B-') || typeUpper.includes('BOMBER')) {
+        return 'Bombefly';
+    }
+
+    return 'Militærfly';
+}
+
+/**
+ * Clear cache (for testing/debugging)
+ */
+export function clearAircraftCache() {
+    aircraftCache.clear();
+    console.log("✅ Aircraft cache ryddet");
+}

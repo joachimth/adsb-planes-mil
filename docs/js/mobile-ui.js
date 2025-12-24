@@ -6,6 +6,7 @@
 console.log("✅ mobile-ui.js er indlæst.");
 
 import { getSquawkDescription, getSquawkInfo } from './squawk-lookup.js';
+import { getAircraftInfo, getAircraftTypeIcon, getAircraftCategory } from './aircraft-info.js';
 
 // State
 const uiState = {
@@ -368,6 +369,113 @@ function populateBottomSheet(aircraft) {
     } else {
         distanceEl.innerHTML = '---<span class="detail-unit">km</span>';
     }
+
+    // Fetch and display aircraft info (photo, type, etc.)
+    loadAircraftInfo(aircraft);
+}
+
+/**
+ * Load and display aircraft information (async)
+ */
+async function loadAircraftInfo(aircraft) {
+    const icao = aircraft.r;
+    if (!icao) {
+        hideAircraftInfo();
+        return;
+    }
+
+    try {
+        // Show loading state
+        showAircraftInfoLoading();
+
+        // Fetch aircraft info
+        const info = await getAircraftInfo(icao);
+
+        if (!info) {
+            hideAircraftInfo();
+            return;
+        }
+
+        // Display type information
+        if (info.type || info.description) {
+            document.getElementById('typeName').textContent = info.type || info.description || '---';
+            document.getElementById('typeCategory').textContent =
+                info.type ? getAircraftCategory(info.type) : 'Ukendt';
+            document.getElementById('typeIcon').textContent =
+                info.type ? getAircraftTypeIcon(info.type) : '✈️';
+        }
+
+        // Display photo if available
+        const photoContainer = document.getElementById('aircraftPhotoContainer');
+        const photoImg = document.getElementById('aircraftPhoto');
+        const photoLoader = document.getElementById('photoLoader');
+
+        if (info.photoUrl) {
+            photoImg.src = info.photoUrl;
+            photoImg.style.display = 'block';
+            photoLoader.style.display = 'none';
+
+            photoImg.onerror = () => {
+                // Photo failed to load, hide photo section
+                photoContainer.style.display = 'none';
+            };
+
+            photoImg.onload = () => {
+                photoLoader.style.display = 'none';
+            };
+        } else {
+            photoContainer.style.display = 'none';
+        }
+
+        // Display external links
+        if (info.externalLinks) {
+            document.getElementById('linkFlightradar').href = info.externalLinks.flightradar24;
+            document.getElementById('linkAdsbex').href = info.externalLinks.adsbexchange;
+            document.getElementById('linkPlanespotters').href = info.externalLinks.planespotters;
+
+            const jetphotosLink = document.getElementById('linkJetphotos');
+            if (info.externalLinks.jetphotos) {
+                jetphotosLink.href = info.externalLinks.jetphotos;
+                jetphotosLink.style.display = 'flex';
+            } else {
+                jetphotosLink.style.display = 'none';
+            }
+
+            document.getElementById('externalLinks').style.display = 'block';
+        }
+
+        // Show info section
+        document.getElementById('aircraftInfoSection').style.display = 'block';
+
+    } catch (error) {
+        console.warn('⚠️ Kunne ikke hente flyinformation:', error);
+        hideAircraftInfo();
+    }
+}
+
+/**
+ * Show loading state for aircraft info
+ */
+function showAircraftInfoLoading() {
+    const photoLoader = document.getElementById('photoLoader');
+    const photoContainer = document.getElementById('aircraftPhotoContainer');
+    const photoImg = document.getElementById('aircraftPhoto');
+
+    photoImg.style.display = 'none';
+    photoLoader.style.display = 'flex';
+    photoContainer.style.display = 'block';
+
+    document.getElementById('typeName').textContent = 'Henter...';
+    document.getElementById('typeCategory').textContent = '---';
+    document.getElementById('aircraftInfoSection').style.display = 'block';
+}
+
+/**
+ * Hide aircraft info section
+ */
+function hideAircraftInfo() {
+    document.getElementById('aircraftInfoSection').style.display = 'none';
+    document.getElementById('externalLinks').style.display = 'none';
 }
 
 /* ========================================
