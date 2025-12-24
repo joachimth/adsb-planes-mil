@@ -5,6 +5,8 @@
 
 console.log("✅ mobile-ui.js er indlæst.");
 
+import { getSquawkDescription, getSquawkInfo } from './squawk-lookup.js';
+
 // State
 const uiState = {
     bottomSheetVisible: false,
@@ -328,7 +330,18 @@ function populateBottomSheet(aircraft) {
         `${speed}<span class="detail-unit">knob</span>`;
 
     // Squawk
-    document.getElementById('detailSquawk').textContent = aircraft.squawk || '----';
+    const squawkCode = aircraft.squawk || '----';
+    const squawkInfo = getSquawkInfo(squawkCode);
+    const squawkEl = document.getElementById('detailSquawk');
+
+    if (squawkInfo && squawkInfo.description) {
+        squawkEl.innerHTML = `
+            ${squawkCode}
+            <div class="squawk-desc">${squawkInfo.description}</div>
+        `;
+    } else {
+        squawkEl.textContent = squawkCode;
+    }
 
     // ICAO
     document.getElementById('detailIcao').textContent = aircraft.r || '------';

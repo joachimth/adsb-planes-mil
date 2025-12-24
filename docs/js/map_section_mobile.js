@@ -6,6 +6,7 @@
 console.log("✅ map_section_mobile.js er indlæst.");
 
 import { determineAircraftCategory, openBottomSheet } from './mobile-ui.js';
+import { getSquawkDescription } from './squawk-lookup.js';
 
 // Map state
 let myMap;
@@ -135,14 +136,24 @@ export function updateMap(aircraftData) {
         const altitude = aircraft.alt_baro === 'ground'
             ? 'Ground'
             : (aircraft.alt_baro ? `${aircraft.alt_baro} ft` : 'N/A');
+        const squawk = aircraft.squawk || '----';
+        const squawkDesc = getSquawkDescription(squawk);
 
-        marker.bindPopup(`
+        let popupContent = `
             <div class="flight-popup">
                 <strong>${callsign}</strong><br>
                 ${altitude}<br>
-                <small>Tap for details</small>
+                <span style="font-family: monospace; font-weight: 600;">${squawk}</span>`;
+
+        if (squawkDesc) {
+            popupContent += `<br><span style="font-size: 11px; opacity: 0.8;">${squawkDesc}</span>`;
+        }
+
+        popupContent += `<br><small style="margin-top: 4px; display: block;">Tryk for detaljer</small>
             </div>
-        `);
+        `;
+
+        marker.bindPopup(popupContent);
 
         // Click to open bottom sheet
         marker.on('click', () => {

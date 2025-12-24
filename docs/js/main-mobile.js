@@ -7,6 +7,7 @@ import { initMap, updateMap } from './map_section_mobile.js';
 import { initMobileUI, showEmergencyAlert, hideEmergencyAlert, showStatusIndicator, hideStatusIndicator, determineAircraftCategory } from './mobile-ui.js';
 import { initFilterBar, updateFilterCounts, shouldShowAircraft, getFilterState } from './filter-bar.js';
 import { initListView, toggleListView, updateListView } from './list-view.js';
+import { loadSquawkCodes } from './squawk-lookup.js';
 
 console.log("✈️ MilAir Watch Mobile startet...");
 
@@ -38,6 +39,9 @@ async function main() {
         initMobileUI();
         initFilterBar(onFilterChange, onListViewToggle);
         initListView();
+
+        // Load squawk codes database
+        await loadSquawkCodes();
 
         // Listen for sort changes
         document.addEventListener('sortChanged', () => {
