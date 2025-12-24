@@ -391,29 +391,54 @@ async function loadAircraftInfo(aircraft) {
         // Fetch aircraft info
         const info = await getAircraftInfo(icao);
 
-        if (!info) {
-            hideAircraftInfo();
+        // Always hide photo container initially
+        const photoContainer = document.getElementById('aircraftPhotoContainer');
+        photoContainer.style.display = 'none';
+
+        if (!info || (!info.type && !info.description && !info.photoUrl)) {
+            // No data available - show unknown aircraft state
+            showUnknownAircraftState();
+
+            // Still show external links if available
+            if (info && info.externalLinks) {
+                document.getElementById('linkFlightradar').href = info.externalLinks.flightradar24;
+                document.getElementById('linkAdsbex').href = info.externalLinks.adsbexchange;
+                document.getElementById('linkPlanespotters').href = info.externalLinks.planespotters;
+
+                const jetphotosLink = document.getElementById('linkJetphotos');
+                if (info.externalLinks.jetphotos) {
+                    jetphotosLink.href = info.externalLinks.jetphotos;
+                    jetphotosLink.style.display = 'flex';
+                } else {
+                    jetphotosLink.style.display = 'none';
+                }
+            }
             return;
         }
 
         // Display type information
         if (info.type || info.description) {
-            document.getElementById('typeName').textContent = info.type || info.description || '---';
+            document.getElementById('typeName').textContent = info.type || info.description || 'Ukendt flytype';
             document.getElementById('typeCategory').textContent =
-                info.type ? getAircraftCategory(info.type) : 'Ukendt';
+                info.type ? getAircraftCategory(info.type) : 'Information ikke tilgængelig';
             document.getElementById('typeIcon').textContent =
                 info.type ? getAircraftTypeIcon(info.type) : '✈️';
+        } else {
+            // Show default unknown state
+            document.getElementById('typeName').textContent = 'Ukendt flytype';
+            document.getElementById('typeCategory').textContent = 'Information ikke tilgængelig';
+            document.getElementById('typeIcon').textContent = '✈️';
         }
 
         // Display photo if available
-        const photoContainer = document.getElementById('aircraftPhotoContainer');
         const photoImg = document.getElementById('aircraftPhoto');
         const photoLoader = document.getElementById('photoLoader');
 
         if (info.photoUrl) {
+            photoContainer.style.display = 'block';
             photoImg.src = info.photoUrl;
-            photoImg.style.display = 'block';
-            photoLoader.style.display = 'none';
+            photoImg.style.display = 'none';
+            photoLoader.style.display = 'flex';
 
             photoImg.onerror = () => {
                 // Photo failed to load, hide photo section
@@ -421,13 +446,12 @@ async function loadAircraftInfo(aircraft) {
             };
 
             photoImg.onload = () => {
+                photoImg.style.display = 'block';
                 photoLoader.style.display = 'none';
             };
-        } else {
-            photoContainer.style.display = 'none';
         }
 
-        // Display external links
+        // Display external links (always show if we have ICAO)
         if (info.externalLinks) {
             document.getElementById('linkFlightradar').href = info.externalLinks.flightradar24;
             document.getElementById('linkAdsbex').href = info.externalLinks.adsbexchange;
@@ -476,6 +500,25 @@ function showAircraftInfoLoading() {
 function hideAircraftInfo() {
     document.getElementById('aircraftInfoSection').style.display = 'none';
     document.getElementById('externalLinks').style.display = 'none';
+}
+
+/**
+ * Show unknown aircraft state (when no data is available)
+ */
+function showUnknownAircraftState() {
+    // Hide photo container
+    document.getElementById('aircraftPhotoContainer').style.display = 'none';
+
+    // Show unknown state
+    document.getElementById('typeName').textContent = 'Ukendt flytype';
+    document.getElementById('typeCategory').textContent = 'Information ikke tilgængelig for dette fly';
+    document.getElementById('typeIcon').textContent = '❓';
+
+    // Show info section (so user sees it's unknown, not just loading)
+    document.getElementById('aircraftInfoSection').style.display = 'block';
+
+    // Still show external links if we have ICAO - user can look up manually
+    document.getElementById('externalLinks').style.display = 'block';
 }
 
 /* ========================================
