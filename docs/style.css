@@ -131,12 +131,15 @@ body {
     left: 0;
     right: 0;
     height: 56px;
+    /* Add safe area for iPhone notch */
+    padding-top: env(safe-area-inset-top);
     background: var(--radar-surface);
     border-bottom: 1px solid var(--border-subtle);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 var(--space-md);
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
     z-index: var(--z-menu);
     box-shadow: var(--shadow-md);
 }
@@ -208,10 +211,12 @@ body {
    ======================================== */
 .map-container {
     position: absolute;
-    top: 56px;
+    /* Account for top bar + safe area */
+    top: calc(56px + env(safe-area-inset-top));
     left: 0;
     right: 0;
-    bottom: 72px; /* Space for filter bar */
+    /* Account for filter bar + safe area */
+    bottom: calc(72px + env(safe-area-inset-bottom));
     z-index: var(--z-map);
     overflow: hidden;
 }
@@ -256,6 +261,10 @@ body {
     background: var(--radar-surface);
     border-top: 1px solid var(--border-subtle);
     padding: var(--space-sm);
+    /* Add safe area for iPhone home indicator */
+    padding-bottom: max(var(--space-sm), env(safe-area-inset-bottom));
+    padding-left: max(var(--space-sm), env(safe-area-inset-left));
+    padding-right: max(var(--space-sm), env(safe-area-inset-right));
     display: flex;
     gap: var(--space-sm);
     z-index: var(--z-filter-bar);
@@ -656,7 +665,8 @@ body {
    ======================================== */
 .list-view {
     position: fixed;
-    top: 56px;
+    /* Account for top bar + safe area */
+    top: calc(56px + env(safe-area-inset-top));
     left: 0;
     right: 0;
     bottom: 0;
@@ -667,7 +677,8 @@ body {
     visibility: hidden;
     transition: opacity var(--transition-normal), visibility var(--transition-normal);
     padding: var(--space-md);
-    padding-bottom: 80px; /* Space for filter bar */
+    /* Space for filter bar + safe area */
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
 .list-view.visible {
@@ -797,9 +808,10 @@ body {
    ======================================== */
 .emergency-alert {
     position: fixed;
-    top: 64px;
-    left: var(--space-md);
-    right: var(--space-md);
+    /* Position below top bar + safe area */
+    top: calc(64px + env(safe-area-inset-top));
+    left: max(var(--space-md), env(safe-area-inset-left));
+    right: max(var(--space-md), env(safe-area-inset-right));
     background: var(--status-emergency);
     color: white;
     padding: var(--space-md);
@@ -809,7 +821,7 @@ body {
     display: flex;
     align-items: center;
     gap: var(--space-md);
-    transform: translateY(-120%);
+    transform: translateY(-200%);
     transition: transform var(--transition-normal);
 }
 
@@ -862,8 +874,9 @@ body {
    ======================================== */
 .status-indicator {
     position: fixed;
-    top: 64px;
-    right: var(--space-md);
+    /* Position below top bar + safe area */
+    top: calc(64px + env(safe-area-inset-top));
+    right: max(var(--space-md), env(safe-area-inset-right));
     padding: var(--space-sm) var(--space-md);
     background: var(--radar-surface);
     border: 1px solid var(--border-subtle);

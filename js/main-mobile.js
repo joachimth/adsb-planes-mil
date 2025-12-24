@@ -128,9 +128,10 @@ function processAircraftData() {
         categorized[category].push(aircraft);
     });
 
-    // Check for emergencies (UNFILTERED)
-    if (categorized.emergency.length > 0) {
-        showEmergencyAlert(categorized.emergency[0]);
+    // Check for emergencies (UNFILTERED) - only show if aircraft has valid position
+    const emergencyWithPosition = categorized.emergency.find(a => a.lat && a.lon);
+    if (emergencyWithPosition) {
+        showEmergencyAlert(emergencyWithPosition);
     } else {
         hideEmergencyAlert();
     }
