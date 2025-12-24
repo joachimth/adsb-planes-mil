@@ -1,0 +1,54 @@
+{
+  "categories": [
+    {
+      "name": "Nødsituationer (Altid aktiv)",
+      "codes": [
+        { "code": "7500", "description": "Ulovlig Handling (Kapring)", "checked": true, "disabled": true },
+        { "code": "7600", "description": "Tabt Kommunikation", "checked": true, "disabled": true },
+        { "code": "7700", "description": "Generel Nødsituation", "checked": true, "disabled": true }
+      ]
+    },
+    {
+      "name": "Internationale Standardkoder",
+      "codes": [
+        { "code": "1200", "description": "VFR standard (USA/Canada)", "checked": true, "disabled": false },
+        { "code": "7000", "description": "VFR standard (Europa)", "checked": true, "disabled": false },
+        { "code": "2000", "description": "IFR uden for radar dækning", "checked": true, "disabled": false },
+        { "code": "0000", "description": "Ikke-diskret kode (undgå)", "checked": true, "disabled": false }
+      ]
+    },
+    {
+      "name": "Militære Operationer",
+      "codes": [
+        { "code": "7777", "description": "Militær afvisning (interception)", "checked": true, "disabled": false },
+        { "code": "4000", "description": "Militære operationer (generelt)", "checked": true, "disabled": false },
+        { "code": "4400-4477", "description": "Militære reserverede områder", "checked": true, "disabled": false },
+        { "code": "7401-7477", "description": "Militære øvelser & UAV-missioner", "checked": true, "disabled": false },
+        { "code": "7610-7676", "description": "Specifikke militære missioner", "checked": true, "disabled": false },
+        { "code": "0033", "description": "Faldskærmsudspring (Europa)", "checked": true, "disabled": false },
+        { "code": "4575", "description": "NATO AWACS-flyvning", "checked": true, "disabled": false }
+      ]
+    },
+    {
+      "name": "Specielle Operationer & Flyvninger",
+      "codes": [
+        { "code": "0021", "description": "VFR lavhøjde (Tyskland)", "checked": true, "disabled": false },
+        { "code": "0022", "description": "VFR lavhøjde (Tyskland)", "checked": true, "disabled": false },
+        { "code": "0030", "description": "Testflyvning", "checked": true, "disabled": false },
+        { "code": "3000-3777", "description": "Diverse specialmissioner", "checked": true, "disabled": false },
+        { "code": "5000-5377", "description": "Operationelle militærflyvninger", "checked": true, "disabled": false }
+      ]
+    },
+    {
+      "name": "Nationale Koder (USA)",
+      "codes": [
+        { "code": "1255", "description": "Brandbekæmpelse", "checked": true, "disabled": false },
+        { "code": "1277", "description": "Søge- og redningsoperationer (SAR)", "checked": true, "disabled": false },
+        { "code": "7400", "description": "UAV mistet forbindelse", "checked": true, "disabled": false },
+        { "code": "1202", "description": "VFR svævefly", "checked": true, "disabled": false },
+        { "code": "1203", "description": "Formation flyvning", "checked": true, "disabled": false },
+        { "code": "0400-0477", "description": "Dept. of Homeland Security (DHS)", "checked": false, "disabled": false }
+      ]
+    }
+  ]
+}
