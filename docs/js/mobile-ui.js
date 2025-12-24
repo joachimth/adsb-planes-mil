@@ -714,16 +714,6 @@ function getCategoryLabel(category) {
     return labels[category] || 'CIVIL';
 }
 
-function getSquawkDescription(squawk) {
-    const descriptions = {
-        '7500': 'Kapring',
-        '7600': 'Tabt kommunikation',
-        '7700': 'Generel nødsituation',
-        '7777': 'Militær afvisning'
-    };
-    return descriptions[squawk] || 'Special kode';
-}
-
 export function getUserLocation() {
     return uiState.userLocation;
 }
