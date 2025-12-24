@@ -1,0 +1,1061 @@
+/**
+ * MilAir Watch - Mobile-First Radar Style CSS
+ * Modern, dark theme optimized for mobile aircraft tracking
+ * Copyright 2025 Joachim Thirsbro
+ */
+
+/* ========================================
+   CSS CUSTOM PROPERTIES
+   ======================================== */
+:root {
+    /* Dark Radar Theme */
+    --radar-bg: #0a0e1a;
+    --radar-bg-light: #131825;
+    --radar-surface: #1a1f2e;
+    --radar-surface-elevated: #252b3d;
+
+    /* Accent Colors */
+    --accent-primary: #00d4ff;
+    --accent-military: #00ff88;
+    --accent-emergency: #ff3366;
+    --accent-special: #ffaa00;
+
+    /* Text Colors */
+    --text-primary: #e8eaed;
+    --text-secondary: #9aa0a6;
+    --text-muted: #5f6368;
+
+    /* Status Colors */
+    --status-military: #00ff88;
+    --status-emergency: #ff3366;
+    --status-special: #ffaa00;
+    --status-civilian: #00d4ff;
+
+    /* UI Elements */
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+    /* Z-index Layers */
+    --z-base: 1;
+    --z-map: 10;
+    --z-filter-bar: 100;
+    --z-bottom-sheet: 200;
+    --z-menu: 300;
+    --z-emergency: 400;
+    --z-modal: 500;
+
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+
+    /* Touch Targets */
+    --touch-min: 44px;
+    --touch-optimal: 56px;
+}
+
+/* ========================================
+   RESET & BASE STYLES
+   ======================================== */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent page zoom and scroll */
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    touch-action: manipulation;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                 'Helvetica Neue', Arial, sans-serif;
+    background: var(--radar-bg);
+    color: var(--text-primary);
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    /* Prevent iOS bounce scroll */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+}
+
+/* ========================================
+   MOBILE-FIRST LAYOUT
+   ======================================== */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+/* ========================================
+   TOP BAR
+   ======================================== */
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    /* Add safe area for iPhone notch */
+    padding-top: env(safe-area-inset-top);
+    background: var(--radar-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
+    z-index: var(--z-menu);
+    box-shadow: var(--shadow-md);
+}
+
+.app-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.logo-icon {
+    font-size: 24px;
+}
+
+.hamburger-btn {
+    width: var(--touch-min);
+    height: var(--touch-min);
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.hamburger-btn:hover,
+.hamburger-btn:focus {
+    background: var(--radar-surface-elevated);
+}
+
+.hamburger-icon {
+    width: 24px;
+    height: 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.hamburger-icon span {
+    display: block;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: transform var(--transition-normal), opacity var(--transition-normal);
+}
+
+.hamburger-btn.active .hamburger-icon span:nth-child(1) {
+    transform: translateY(9px) rotate(45deg);
+}
+
+.hamburger-btn.active .hamburger-icon span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-btn.active .hamburger-icon span:nth-child(3) {
+    transform: translateY(-9px) rotate(-45deg);
+}
+
+/* ========================================
+   FULLSCREEN MAP
+   ======================================== */
+.map-container {
+    position: absolute;
+    /* Account for top bar + safe area */
+    top: calc(56px + env(safe-area-inset-top));
+    left: 0;
+    right: 0;
+    /* Account for filter bar + safe area */
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    z-index: var(--z-map);
+    overflow: hidden;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    background: var(--radar-bg-light);
+    /* Prevent map from triggering page zoom */
+    touch-action: pan-x pan-y;
+}
+
+/* Dark map tiles */
+.leaflet-tile-container img {
+    filter: brightness(0.6) contrast(1.2) saturate(0.8) hue-rotate(200deg);
+}
+
+/* Custom marker styles */
+.leaflet-popup-content-wrapper {
+    background: var(--radar-surface-elevated);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+}
+
+.leaflet-popup-tip {
+    background: var(--radar-surface-elevated);
+}
+
+.leaflet-popup-close-button {
+    color: var(--text-primary) !important;
+}
+
+/* ========================================
+   BOTTOM FILTER BAR
+   ======================================== */
+.filter-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--radar-surface);
+    border-top: 1px solid var(--border-subtle);
+    padding: var(--space-sm);
+    /* Add safe area for iPhone home indicator */
+    padding-bottom: max(var(--space-sm), env(safe-area-inset-bottom));
+    padding-left: max(var(--space-sm), env(safe-area-inset-left));
+    padding-right: max(var(--space-sm), env(safe-area-inset-right));
+    display: flex;
+    gap: var(--space-sm);
+    z-index: var(--z-filter-bar);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
+    transition: transform var(--transition-normal);
+}
+
+.filter-bar.hidden {
+    transform: translateY(100%);
+}
+
+.filter-btn {
+    flex: 1;
+    min-height: var(--touch-optimal);
+    border: 2px solid var(--border-subtle);
+    background: var(--radar-surface-elevated);
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: all var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-btn:active {
+    transform: scale(0.95);
+}
+
+.filter-btn-icon {
+    font-size: 20px;
+}
+
+.filter-btn-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Filter button active states */
+.filter-btn.active {
+    border-color: currentColor;
+}
+
+.filter-btn.military.active {
+    color: var(--status-military);
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.filter-btn.emergency.active {
+    color: var(--status-emergency);
+    background: rgba(255, 51, 102, 0.1);
+}
+
+.filter-btn.special.active {
+    color: var(--status-special);
+    background: rgba(255, 170, 0, 0.1);
+}
+
+.filter-btn.list-view.active {
+    color: var(--accent-primary);
+    background: rgba(0, 212, 255, 0.1);
+}
+
+/* Badge for count */
+.filter-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--accent-emergency);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 12px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* ========================================
+   BOTTOM SHEET (Aircraft Details)
+   ======================================== */
+.bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--radar-surface);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-bottom-sheet);
+    transform: translateY(100%);
+    transition: transform var(--transition-normal);
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.bottom-sheet.visible {
+    transform: translateY(0);
+}
+
+.bottom-sheet-handle {
+    width: 100%;
+    padding: var(--space-md) 0 var(--space-sm) 0;
+    display: flex;
+    justify-content: center;
+    cursor: grab;
+}
+
+.bottom-sheet-handle:active {
+    cursor: grabbing;
+}
+
+.handle-bar {
+    width: 40px;
+    height: 4px;
+    background: var(--text-muted);
+    border-radius: 2px;
+}
+
+.bottom-sheet-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 var(--space-lg) var(--space-xl) var(--space-lg);
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Aircraft detail styles */
+.aircraft-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-lg);
+}
+
+.aircraft-callsign {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'Courier New', monospace;
+}
+
+.aircraft-status-badge {
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.aircraft-status-badge.military {
+    background: var(--status-military);
+    color: var(--radar-bg);
+}
+
+.aircraft-status-badge.emergency {
+    background: var(--status-emergency);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.aircraft-status-badge.special {
+    background: var(--status-special);
+    color: var(--radar-bg);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.aircraft-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.detail-item {
+    background: var(--radar-bg-light);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+}
+
+.detail-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.detail-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: 'Courier New', monospace;
+}
+
+.detail-value.large {
+    font-size: 24px;
+}
+
+.detail-unit {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+.squawk-desc {
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-weight: 400;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin-top: 2px;
+    padding: 4px 6px;
+    background: var(--radar-bg);
+    border-radius: var(--radius-sm);
+    display: inline-block;
+    max-width: 100%;
+    line-height: 1.3;
+}
+
+.aircraft-actions {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+}
+
+.action-btn {
+    flex: 1;
+    min-height: var(--touch-optimal);
+    border: none;
+    background: var(--accent-primary);
+    color: var(--radar-bg);
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    transition: all var(--transition-fast);
+}
+
+.action-btn:active {
+    transform: scale(0.96);
+}
+
+.action-btn.secondary {
+    background: var(--radar-surface-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+}
+
+.action-btn.following {
+    background: var(--accent-primary);
+    color: var(--radar-bg);
+    border: none;
+}
+
+/* ========================================
+   HAMBURGER MENU (Slide-in)
+   ======================================== */
+.menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 14, 26, 0.8);
+    backdrop-filter: blur(4px);
+    z-index: var(--z-menu);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-normal), visibility var(--transition-normal);
+}
+
+.menu-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.side-menu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 85%;
+    max-width: 320px;
+    height: 100%;
+    background: var(--radar-surface);
+    box-shadow: var(--shadow-lg);
+    z-index: calc(var(--z-menu) + 1);
+    transform: translateX(100%);
+    transition: transform var(--transition-normal);
+    display: flex;
+    flex-direction: column;
+}
+
+.side-menu.visible {
+    transform: translateX(0);
+}
+
+.menu-header {
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.menu-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.menu-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-md);
+}
+
+.menu-section {
+    margin-bottom: var(--space-xl);
+}
+
+.menu-section-title {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 var(--space-md) 0;
+    font-weight: 600;
+}
+
+.menu-item {
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-sm);
+    transition: background var(--transition-fast);
+}
+
+.menu-item:hover {
+    background: var(--radar-surface-elevated);
+}
+
+.menu-item-icon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+}
+
+.menu-item-text {
+    flex: 1;
+}
+
+.menu-item-label {
+    font-size: 15px;
+    font-weight: 500;
+    display: block;
+}
+
+.menu-item-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: block;
+    margin-top: 2px;
+}
+
+/* Toggle switch */
+.toggle-switch {
+    width: 48px;
+    height: 28px;
+    background: var(--radar-bg-light);
+    border-radius: 14px;
+    position: relative;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.toggle-switch.active {
+    background: var(--accent-primary);
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform var(--transition-fast);
+}
+
+.toggle-switch.active::after {
+    transform: translateX(20px);
+}
+
+/* ========================================
+   LIST VIEW
+   ======================================== */
+.list-view {
+    position: fixed;
+    /* Account for top bar + safe area */
+    top: calc(56px + env(safe-area-inset-top));
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--radar-bg);
+    z-index: calc(var(--z-map) + 1);
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-normal), visibility var(--transition-normal);
+    padding: var(--space-md);
+    /* Space for filter bar + safe area */
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
+
+.list-view.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.list-header {
+    padding: var(--space-md) 0;
+    position: sticky;
+    top: 0;
+    background: var(--radar-bg);
+    z-index: 10;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: var(--space-md);
+}
+
+.list-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.list-count {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.sort-select {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--radar-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+}
+
+.aircraft-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.aircraft-card {
+    background: var(--radar-surface);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    border-left: 4px solid var(--status-civilian);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.aircraft-card:active {
+    transform: scale(0.98);
+}
+
+.aircraft-card.military {
+    border-left-color: var(--status-military);
+}
+
+.aircraft-card.emergency {
+    border-left-color: var(--status-emergency);
+    background: rgba(255, 51, 102, 0.05);
+}
+
+.aircraft-card.special {
+    border-left-color: var(--status-special);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+
+.card-callsign {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    color: var(--text-primary);
+}
+
+.card-type-badge {
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.card-type-badge.military {
+    background: var(--status-military);
+    color: var(--radar-bg);
+}
+
+.card-type-badge.emergency {
+    background: var(--status-emergency);
+    color: white;
+}
+
+.card-type-badge.special {
+    background: var(--status-special);
+    color: var(--radar-bg);
+}
+
+.card-details {
+    display: flex;
+    gap: var(--space-lg);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.card-detail {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-detail-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+}
+
+/* ========================================
+   EMERGENCY ALERT
+   ======================================== */
+.emergency-alert {
+    position: fixed;
+    /* Position below top bar + safe area */
+    top: calc(64px + env(safe-area-inset-top));
+    left: max(var(--space-md), env(safe-area-inset-left));
+    right: max(var(--space-md), env(safe-area-inset-right));
+    background: var(--status-emergency);
+    color: white;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-emergency);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    transform: translateY(-200%);
+    transition: transform var(--transition-normal);
+}
+
+.emergency-alert.visible {
+    transform: translateY(0);
+}
+
+.emergency-alert-icon {
+    font-size: 24px;
+    animation: pulse 1.5s infinite;
+}
+
+.emergency-alert-content {
+    flex: 1;
+}
+
+.emergency-alert-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin: 0 0 4px 0;
+}
+
+.emergency-alert-text {
+    font-size: 12px;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.emergency-close-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast);
+}
+
+.emergency-close-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ========================================
+   LOADING & STATUS
+   ======================================== */
+.status-indicator {
+    position: fixed;
+    /* Position below top bar + safe area */
+    top: calc(64px + env(safe-area-inset-top));
+    right: max(var(--space-md), env(safe-area-inset-right));
+    padding: var(--space-sm) var(--space-md);
+    background: var(--radar-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    color: var(--text-secondary);
+    z-index: var(--z-emergency);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast), visibility var(--transition-fast);
+}
+
+.status-indicator.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.status-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border-subtle);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+.hidden {
+    display: none !important;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ========================================
+   RESPONSIVE - TABLET & DESKTOP
+   ======================================== */
+@media screen and (min-width: 768px) {
+    .top-bar {
+        height: 64px;
+        padding: 0 var(--space-lg);
+    }
+
+    .app-logo {
+        font-size: 20px;
+    }
+
+    .map-container {
+        top: 64px;
+    }
+
+    .filter-bar {
+        padding: var(--space-md);
+        gap: var(--space-md);
+    }
+
+    .filter-btn {
+        min-height: 64px;
+        font-size: 14px;
+    }
+
+    .filter-btn-icon {
+        font-size: 24px;
+    }
+
+    .filter-btn-label {
+        font-size: 11px;
+    }
+
+    .bottom-sheet {
+        max-width: 480px;
+        left: 50%;
+        transform: translate(-50%, 100%);
+        border-radius: var(--radius-xl);
+    }
+
+    .bottom-sheet.visible {
+        transform: translate(-50%, 0);
+    }
+
+    .side-menu {
+        max-width: 400px;
+    }
+
+    .list-view {
+        top: 64px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+}
+
+@media screen and (min-width: 1024px) {
+    .list-view {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-md);
+    }
+
+    .list-header {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus styles */
+*:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+@media print {
+    .top-bar,
+    .filter-bar,
+    .bottom-sheet,
+    .side-menu,
+    .emergency-alert {
+        display: none !important;
+    }
+
+    .map-container {
+        top: 0;
+        position: static;
+    }
+
+    body {
+        background: white;
+        color: black;
+    }
+}
