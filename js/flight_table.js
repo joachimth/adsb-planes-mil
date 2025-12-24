@@ -21,7 +21,7 @@ export function updateFlightTable(flightData) {
     if (!flightData || flightData.length === 0) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="6" class="no-data">
+                <td colspan="7" class="no-data">
                     Ingen fly matcher de nuværende filtre.
                 </td>
             </tr>
@@ -33,6 +33,7 @@ export function updateFlightTable(flightData) {
     const rowsHTML = flightData.map(flight => {
         const icao = flight.r || 'N/A';
         const callsign = flight.flight?.trim() || 'N/A';
+        const type = flight.aircraftType || '...';
         const squawk = flight.squawk || '----';
         const altitude = flight.alt_baro === 'ground'
             ? 'På jorden'
@@ -51,6 +52,7 @@ export function updateFlightTable(flightData) {
             <tr${emergencyClass}>
                 <td data-label="ICAO">${icao.toUpperCase()}</td>
                 <td data-label="Kaldesignal">${callsign}</td>
+                <td data-label="Type">${type}</td>
                 <td data-label="Squawk">${squawk}</td>
                 <td data-label="Højde">${altitude}</td>
                 <td data-label="Hastighed">${speed}</td>

@@ -378,8 +378,10 @@ function populateBottomSheet(aircraft) {
  * Load and display aircraft information (async)
  */
 async function loadAircraftInfo(aircraft) {
-    const icao = aircraft.r;
-    if (!icao) {
+    const registration = aircraft.r;
+    const hex = aircraft.hex || null;
+
+    if (!registration && !hex) {
         hideAircraftInfo();
         return;
     }
@@ -388,8 +390,8 @@ async function loadAircraftInfo(aircraft) {
         // Show loading state
         showAircraftInfoLoading();
 
-        // Fetch aircraft info
-        const info = await getAircraftInfo(icao);
+        // Fetch aircraft info (updated API)
+        const info = await getAircraftInfo(registration, hex);
 
         // Always hide photo container initially
         const photoContainer = document.getElementById('aircraftPhotoContainer');
