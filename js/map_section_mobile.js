@@ -137,7 +137,13 @@ export function updateMap(aircraftData) {
             ? 'Ground'
             : (aircraft.alt_baro ? `${aircraft.alt_baro} ft` : 'N/A');
         const squawk = aircraft.squawk || '----';
-        const squawkDesc = getSquawkDescription(squawk);
+        let squawkDesc = null;
+
+        try {
+            squawkDesc = getSquawkDescription(squawk);
+        } catch (err) {
+            // Squawk lookup not available - continue without description
+        }
 
         let popupContent = `
             <div class="flight-popup">
