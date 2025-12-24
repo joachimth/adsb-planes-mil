@@ -134,6 +134,24 @@
                     <span class="aircraft-status-badge military" id="detailStatusBadge">Militær</span>
                 </div>
 
+                <!-- Aircraft Photo & Type Info -->
+                <div class="aircraft-info-section" id="aircraftInfoSection" style="display: none;">
+                    <div class="aircraft-photo-container" id="aircraftPhotoContainer">
+                        <img id="aircraftPhoto" class="aircraft-photo" alt="Flyfoto" />
+                        <div class="photo-loader" id="photoLoader">
+                            <div class="loader-spinner"></div>
+                            <span>Henter foto...</span>
+                        </div>
+                    </div>
+                    <div class="aircraft-type-info" id="aircraftTypeInfo">
+                        <div class="type-icon" id="typeIcon">✈️</div>
+                        <div class="type-details">
+                            <div class="type-name" id="typeName">---</div>
+                            <div class="type-category" id="typeCategory">---</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="aircraft-details-grid">
                     <div class="detail-item">
                         <div class="detail-label">Højde</div>
@@ -176,6 +194,29 @@
                         <span>🔗</span>
                         <span>Del</span>
                     </button>
+                </div>
+
+                <!-- External Links -->
+                <div class="external-links" id="externalLinks" style="display: none;">
+                    <h3 class="external-links-title">Flere detaljer</h3>
+                    <div class="external-links-grid">
+                        <a href="#" id="linkFlightradar" class="external-link" target="_blank" rel="noopener">
+                            <span class="link-icon">📡</span>
+                            <span>Flightradar24</span>
+                        </a>
+                        <a href="#" id="linkAdsbex" class="external-link" target="_blank" rel="noopener">
+                            <span class="link-icon">🌐</span>
+                            <span>ADS-B Exchange</span>
+                        </a>
+                        <a href="#" id="linkPlanespotters" class="external-link" target="_blank" rel="noopener">
+                            <span class="link-icon">📸</span>
+                            <span>Planespotters</span>
+                        </a>
+                        <a href="#" id="linkJetphotos" class="external-link" target="_blank" rel="noopener" style="display: none;">
+                            <span class="link-icon">🖼️</span>
+                            <span>JetPhotos</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </aside>
