@@ -8,6 +8,7 @@ import { updateFlightTable } from './flight_table.js';
 import { initializeCallsignFilter } from './callsign_filter.js';
 import { initializeSquawkFilter } from './squawk_filter.js';
 import { initializeEmergencyAlert, checkAndDisplayEmergencyAlert } from './emergency_alert.js';
+import { getAircraftInfo } from './aircraft-info.js';
 
 // Applikations-tilstand
 const state = {
@@ -129,9 +130,13 @@ async function fetchFlightData() {
 
         console.log(`✅ ${state.flightData.length} fly hentet.`);
 
+        // Opdater UI først med basis data
         applyFiltersAndUpdate();
         updateLastUpdatedDisplay();
         setLoadingState(false);
+
+        // Hent aircraft type info i baggrunden
+        enrichFlightDataWithAircraftType();
 
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -143,6 +148,62 @@ async function fetchFlightData() {
         setLoadingState(false);
         showError("Kunne ikke hente flydata. Tjekker igen om 30 sekunder.");
     }
+}
+
+/**
+ * Beriger flight data med aircraft type information fra ADSB.lol API
+ * Henter type info for alle fly i baggrunden og opdaterer UI progressivt
+ */
+async function enrichFlightDataWithAircraftType() {
+    if (!state.flightData || state.flightData.length === 0) {
+        return;
+    }
+
+    console.log(`🔄 Henter flytype-info for ${state.flightData.length} fly...`);
+
+    // Håndter fly i batches for at undgå at overbelaste API'et
+    const BATCH_SIZE = 10;
+    const BATCH_DELAY = 500; // ms mellem batches
+
+    let updatedCount = 0;
+
+    for (let i = 0; i < state.flightData.length; i += BATCH_SIZE) {
+        const batch = state.flightData.slice(i, i + BATCH_SIZE);
+
+        // Hent aircraft info for alle fly i batchen parallelt
+        const promises = batch.map(async (flight) => {
+            try {
+                // API'et returnerer 'r' som registration/identifier
+                // og evt. 'hex' som ICAO hex code
+                const registration = flight.r;
+                const hex = flight.hex || null;
+
+                const aircraftInfo = await getAircraftInfo(registration, hex);
+
+                if (aircraftInfo && aircraftInfo.type) {
+                    flight.aircraftType = aircraftInfo.type;
+                    updatedCount++;
+                    return true;
+                }
+            } catch (error) {
+                console.warn(`⚠️ Kunne ikke hente type for ${flight.r}:`, error);
+            }
+            return false;
+        });
+
+        // Vent på at batchen er færdig
+        await Promise.all(promises);
+
+        // Opdater UI efter hver batch
+        applyFiltersAndUpdate();
+
+        // Vent lidt før næste batch (undtagen for den sidste batch)
+        if (i + BATCH_SIZE < state.flightData.length) {
+            await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+        }
+    }
+
+    console.log(`✅ Flytype-info hentet for ${updatedCount} af ${state.flightData.length} fly.`);
 }
 
 /**
