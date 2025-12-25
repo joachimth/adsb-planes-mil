@@ -101,6 +101,49 @@ export function initMap() {
 }
 
 /**
+ * Create rotated aircraft icon based on heading/track
+ * @param {Object} aircraft - Aircraft data
+ * @param {string} category - Aircraft category (military, emergency, special, civilian)
+ * @returns {L.DivIcon} - Leaflet div icon
+ */
+function createAircraftIcon(aircraft, category) {
+    // Get aircraft heading (track or heading field)
+    const heading = aircraft.track || aircraft.heading || 0;
+
+    // Color based on category
+    const colors = {
+        'military': '#00ff88',    // Green
+        'emergency': '#ff3366',   // Red
+        'special': '#ffaa00',     // Yellow/Amber
+        'civilian': '#00d4ff'     // Cyan/Blue
+    };
+    const color = colors[category] || colors.civilian;
+
+    // Create HTML for rotated aircraft icon
+    const html = `
+        <div style="
+            transform: rotate(${heading}deg);
+            transform-origin: center center;
+            font-size: 24px;
+            line-height: 1;
+            text-shadow:
+                0 0 3px rgba(0,0,0,0.8),
+                0 0 6px ${color},
+                0 0 9px ${color};
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        ">✈️</div>
+    `;
+
+    return L.divIcon({
+        html: html,
+        className: 'aircraft-icon',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
+    });
+}
+
+/**
  * Opdaterer kortet med fly-positioner
  */
 export function updateMap(aircraftData) {
@@ -128,13 +171,15 @@ export function updateMap(aircraftData) {
         }
 
         const category = determineAircraftCategory(aircraft);
-        const icon = icons[category] || icons.civilian;
 
         // Track emergency flights
         if (category === 'emergency') {
             emergencyFlights.push([aircraft.lat, aircraft.lon]);
             hasEmergency = true;
         }
+
+        // Create rotated aircraft icon
+        const icon = createAircraftIcon(aircraft, category);
 
         // Create marker
         const marker = L.marker([aircraft.lat, aircraft.lon], { icon });
