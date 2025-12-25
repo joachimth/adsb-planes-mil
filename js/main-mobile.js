@@ -99,6 +99,12 @@ async function fetchAircraftData() {
 
         console.log(`✅ ${state.allAircraft.length} fly hentet`);
 
+        // Debug: Log første aircraft for at se struktur
+        if (state.allAircraft.length > 0) {
+            console.log('🔍 Første aircraft objekt:', state.allAircraft[0]);
+            console.log('🔍 Felter i aircraft:', Object.keys(state.allAircraft[0]));
+        }
+
         // Process and update UI
         processAircraftData();
 

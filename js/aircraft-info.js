@@ -24,11 +24,17 @@ const API_CONFIG = {
  */
 export async function getAircraftInfo(registration, hex) {
     const cacheKey = registration || hex;
-    if (!cacheKey) return null;
+    if (!cacheKey) {
+        console.warn('⚠️ getAircraftInfo: Ingen cacheKey (registration eller hex)');
+        return null;
+    }
+
+    console.log(`🔍 getAircraftInfo: Søger efter aircraft med reg=${registration}, hex=${hex}`);
 
     // Check cache first
     const cached = aircraftCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        console.log(`✅ Cache hit for ${cacheKey}`);
         return cached.data;
     }
 
@@ -42,19 +48,23 @@ export async function getAircraftInfo(registration, hex) {
 
         // Try ADSB.lol first
         if (registration && registration !== 'N/A') {
+            console.log(`🔄 Prøver ADSB.lol med registration: ${registration}`);
             adsbData = await fetchFromADSBLol('reg', registration);
         }
 
         if (!adsbData && hex) {
+            console.log(`🔄 Prøver ADSB.lol med hex: ${hex}`);
             adsbData = await fetchFromADSBLol('hex', hex);
         }
 
         // Fallback to ADSB.fi if ADSB.lol didn't return data
         if (!adsbData && hex) {
+            console.log(`🔄 Fallback til ADSB.fi med hex: ${hex}`);
             adsbData = await fetchFromADSBFi('hex', hex);
         }
 
         if (adsbData) {
+            console.log(`✅ Aircraft data fundet via ${adsbData._source}:`, adsbData);
             const info = {
                 hex: hex || adsbData.hex,
                 registration: adsbData.r || registration,
@@ -71,10 +81,12 @@ export async function getAircraftInfo(registration, hex) {
                 timestamp: Date.now()
             });
 
+            console.log(`💾 Cached aircraft info for ${cacheKey}:`, info);
             return info;
         }
 
         // Fallback: return basic info with external links
+        console.warn(`⚠️ Ingen aircraft data fundet for ${cacheKey}, returnerer fallback`);
         const fallbackInfo = {
             hex: hex,
             registration: registration,

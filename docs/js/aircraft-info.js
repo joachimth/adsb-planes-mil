@@ -1,6 +1,6 @@
 /**
  * Aircraft Information Module - MilAir Watch
- * Henter flyfotos og type-information fra eksterne kilder
+ * Henter flytype-information fra ADSB.lol og ADSB.fi APIs
  */
 
 console.log("✅ aircraft-info.js er indlæst.");
@@ -9,79 +9,121 @@ console.log("✅ aircraft-info.js er indlæst.");
 const aircraftCache = new Map();
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 timer
 
+// API konfiguration
+const API_CONFIG = {
+    proxyUrl: 'https://corsproxy.io/?url=',
+    adsbLol: 'https://api.adsb.lol/v2',
+    adsbFi: 'https://opendata.adsb.fi/api/v2'
+};
+
 /**
- * Get aircraft information by ICAO hex code
- * @param {string} icao - ICAO hex code (e.g., "43C123")
+ * Get aircraft information by registration or hex code
+ * @param {string} registration - Aircraft registration (e.g., "MM82010")
+ * @param {string} hex - ICAO hex code (e.g., "32004e")
  * @returns {Promise<Object|null>} - Aircraft info or null
  */
-export async function getAircraftInfo(icao) {
-    if (!icao) return null;
+export async function getAircraftInfo(registration, hex) {
+    const cacheKey = registration || hex;
+    if (!cacheKey) {
+        console.warn('⚠️ getAircraftInfo: Ingen cacheKey (registration eller hex)');
+        return null;
+    }
+
+    console.log(`🔍 getAircraftInfo: Søger efter aircraft med reg=${registration}, hex=${hex}`);
 
     // Check cache first
-    const cached = aircraftCache.get(icao);
+    const cached = aircraftCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        console.log(`✅ Cache hit for ${cacheKey}`);
         return cached.data;
     }
 
     try {
-        // Try to fetch from ADS-B Exchange API
-        const adsbData = await fetchFromADSBExchange(icao);
+        // Strategy: Try multiple sources for best coverage
+        // 1. Try ADSB.lol with registration
+        // 2. Try ADSB.lol with hex
+        // 3. Fallback to ADSB.fi with hex
+
+        let adsbData = null;
+
+        // Try ADSB.lol first
+        if (registration && registration !== 'N/A') {
+            console.log(`🔄 Prøver ADSB.lol med registration: ${registration}`);
+            adsbData = await fetchFromADSBLol('reg', registration);
+        }
+
+        if (!adsbData && hex) {
+            console.log(`🔄 Prøver ADSB.lol med hex: ${hex}`);
+            adsbData = await fetchFromADSBLol('hex', hex);
+        }
+
+        // Fallback to ADSB.fi if ADSB.lol didn't return data
+        if (!adsbData && hex) {
+            console.log(`🔄 Fallback til ADSB.fi med hex: ${hex}`);
+            adsbData = await fetchFromADSBFi('hex', hex);
+        }
 
         if (adsbData) {
+            console.log(`✅ Aircraft data fundet via ${adsbData._source}:`, adsbData);
             const info = {
-                icao: icao,
-                registration: adsbData.r || null,
+                hex: hex || adsbData.hex,
+                registration: adsbData.r || registration,
                 type: adsbData.t || null,
                 description: adsbData.desc || null,
-                year: adsbData.year || null,
-                photoUrl: null,
-                externalLinks: buildExternalLinks(icao, adsbData.r)
+                category: adsbData.category || null,
+                source: adsbData._source || 'unknown', // Track which API provided the data
+                externalLinks: buildExternalLinks(hex || adsbData.hex, adsbData.r || registration)
             };
 
-            // Try to get photo URL
-            if (adsbData.r) {
-                info.photoUrl = await getAircraftPhoto(adsbData.r, icao);
-            }
-
             // Cache the result
-            aircraftCache.set(icao, {
+            aircraftCache.set(cacheKey, {
                 data: info,
                 timestamp: Date.now()
             });
 
+            console.log(`💾 Cached aircraft info for ${cacheKey}:`, info);
             return info;
         }
 
         // Fallback: return basic info with external links
+        console.warn(`⚠️ Ingen aircraft data fundet for ${cacheKey}, returnerer fallback`);
         const fallbackInfo = {
-            icao: icao,
-            registration: null,
+            hex: hex,
+            registration: registration,
             type: null,
             description: null,
-            photoUrl: null,
-            externalLinks: buildExternalLinks(icao, null)
+            externalLinks: buildExternalLinks(hex, registration)
         };
+
+        // Cache even null results to avoid repeated failed lookups
+        aircraftCache.set(cacheKey, {
+            data: fallbackInfo,
+            timestamp: Date.now()
+        });
 
         return fallbackInfo;
 
     } catch (error) {
-        console.warn(`⚠️ Kunne ikke hente info for ${icao}:`, error.message);
+        console.warn(`⚠️ Kunne ikke hente info for ${cacheKey}:`, error.message);
         return {
-            icao: icao,
-            externalLinks: buildExternalLinks(icao, null)
+            hex: hex,
+            registration: registration,
+            type: null,
+            externalLinks: buildExternalLinks(hex, registration)
         };
     }
 }
 
 /**
- * Fetch aircraft data from ADS-B Exchange
- * @param {string} icao - ICAO hex code
+ * Fetch aircraft data from ADSB.lol API
+ * @param {string} endpoint - 'reg' or 'hex'
+ * @param {string} value - Registration or hex code
  * @returns {Promise<Object|null>}
  */
-async function fetchFromADSBExchange(icao) {
+async function fetchFromADSBLol(endpoint, value) {
     try {
-        // ADS-B Exchange public API endpoint
-        const url = `https://globe.adsbexchange.com/db/${icao}.json`;
+        const apiUrl = `${API_CONFIG.adsbLol}/${endpoint}/${value}`;
+        const url = API_CONFIG.proxyUrl + encodeURIComponent(apiUrl);
 
         const response = await fetch(url, {
             headers: { 'Accept': 'application/json' },
@@ -89,65 +131,81 @@ async function fetchFromADSBExchange(icao) {
         });
 
         if (!response.ok) {
-            console.warn(`⚠️ ADS-B Exchange API: HTTP ${response.status} for ${icao}`);
+            console.warn(`⚠️ ADSB.lol API: HTTP ${response.status} for ${endpoint}/${value}`);
             return null;
         }
 
         const data = await response.json();
-        return data;
+
+        // ADSB.lol returns { "ac": [...], ... }
+        if (data.ac && data.ac.length > 0) {
+            const aircraft = data.ac[0];
+            aircraft._source = 'adsb.lol'; // Tag source
+            return aircraft;
+        }
+
+        return null;
 
     } catch (error) {
-        console.warn(`⚠️ ADS-B Exchange fetch fejl:`, error.message);
+        console.warn(`⚠️ ADSB.lol fetch fejl for ${endpoint}/${value}:`, error.message);
         return null;
     }
 }
 
 /**
- * Try to get aircraft photo URL
- * @param {string} registration - Aircraft registration (e.g., "N12345")
- * @param {string} icao - ICAO hex code fallback
- * @returns {Promise<string|null>}
+ * Fetch aircraft data from ADSB.fi API (backup source)
+ * @param {string} endpoint - 'hex' (ADSB.fi primarily uses hex lookups)
+ * @param {string} value - Hex code
+ * @returns {Promise<Object|null>}
  */
-async function getAircraftPhoto(registration, icao) {
-    if (!registration) return null;
-
+async function fetchFromADSBFi(endpoint, value) {
     try {
-        // Planespotters.net photo (construct URL)
-        // Format: https://www.planespotters.net/airframe/{registration}
-        const photoUrl = `https://api.planespotters.net/pub/photos/hex/${icao}`;
+        const apiUrl = `${API_CONFIG.adsbFi}/${endpoint}/${value}`;
+        const url = API_CONFIG.proxyUrl + encodeURIComponent(apiUrl);
 
-        // Try to verify the photo exists
-        const response = await fetch(photoUrl, {
-            method: 'HEAD',
-            signal: AbortSignal.timeout(3000)
-        }).catch(() => null);
+        const response = await fetch(url, {
+            headers: { 'Accept': 'application/json' },
+            signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
 
-        if (response && response.ok) {
-            return photoUrl;
+        if (!response.ok) {
+            console.warn(`⚠️ ADSB.fi API: HTTP ${response.status} for ${endpoint}/${value}`);
+            return null;
         }
 
-        // Fallback: return null, we'll show external link instead
+        const data = await response.json();
+
+        // ADSB.fi returns { "ac": [...], ... } - same format as ADSB.lol
+        if (data.ac && data.ac.length > 0) {
+            const aircraft = data.ac[0];
+            aircraft._source = 'adsb.fi'; // Tag source
+            return aircraft;
+        }
+
         return null;
 
     } catch (error) {
+        console.warn(`⚠️ ADSB.fi fetch fejl for ${endpoint}/${value}:`, error.message);
         return null;
     }
 }
 
 /**
  * Build external links for aircraft lookups
- * @param {string} icao - ICAO hex code
+ * @param {string} hex - ICAO hex code
  * @param {string|null} registration - Aircraft registration if available
  * @returns {Object} - Links object
  */
-function buildExternalLinks(icao, registration) {
+function buildExternalLinks(hex, registration) {
     const links = {
-        flightradar24: `https://www.flightradar24.com/data/aircraft/${registration || icao}`,
-        adsbexchange: `https://globe.adsbexchange.com/?icao=${icao}`,
-        planespotters: registration
+        flightradar24: registration && registration !== 'N/A'
+            ? `https://www.flightradar24.com/data/aircraft/${registration}`
+            : hex ? `https://www.flightradar24.com/data/aircraft/${hex}` : null,
+        adsbexchange: hex ? `https://globe.adsbexchange.com/?icao=${hex}` : null,
+        planespotters: registration && registration !== 'N/A'
             ? `https://www.planespotters.net/search?q=${registration}`
-            : `https://www.planespotters.net/hex/${icao}`,
-        jetphotos: registration
+            : hex ? `https://www.planespotters.net/hex/${hex}` : null,
+        jetphotos: registration && registration !== 'N/A'
             ? `https://www.jetphotos.com/registration/${registration}`
             : null
     };
