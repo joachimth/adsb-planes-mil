@@ -416,13 +416,13 @@ function initRegionSelector() {
             btn.classList.add('active');
             btn.setAttribute('aria-pressed', 'true');
 
-            // FORCE inline styles for maximum visibility
-            btn.style.background = 'rgba(0, 212, 255, 0.4)';
-            btn.style.border = '3px solid #00d4ff';
+            // Pænere inline styles - stadig tydeligt synlig
+            btn.style.background = 'rgba(0, 212, 255, 0.2)';
+            btn.style.border = '2px solid #00d4ff';
             btn.style.borderColor = '#00d4ff';
             btn.style.color = '#00d4ff';
-            btn.style.boxShadow = '0 0 12px #00d4ff, 0 0 0 3px #00d4ff';
-            btn.style.fontWeight = '700';
+            btn.style.boxShadow = '0 0 8px rgba(0, 212, 255, 0.5)';
+            btn.style.fontWeight = '600';
 
             activeSet = true;
             console.log(`✅ Active class OG inline styles sat på region: ${state.selectedRegion}`);
@@ -447,13 +447,13 @@ function initRegionSelector() {
             btn.classList.add('active');
             btn.setAttribute('aria-pressed', 'true');
 
-            // Apply inline styles
-            btn.style.background = 'rgba(0, 212, 255, 0.4)';
-            btn.style.border = '3px solid #00d4ff';
+            // Pænere inline styles
+            btn.style.background = 'rgba(0, 212, 255, 0.2)';
+            btn.style.border = '2px solid #00d4ff';
             btn.style.borderColor = '#00d4ff';
             btn.style.color = '#00d4ff';
-            btn.style.boxShadow = '0 0 12px #00d4ff, 0 0 0 3px #00d4ff';
-            btn.style.fontWeight = '700';
+            btn.style.boxShadow = '0 0 8px rgba(0, 212, 255, 0.5)';
+            btn.style.fontWeight = '600';
 
             // Trigger region change
             onRegionChange(selectedRegion);
