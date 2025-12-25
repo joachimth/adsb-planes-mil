@@ -229,6 +229,19 @@ body {
     touch-action: pan-x pan-y;
 }
 
+/* Aircraft icon styling */
+.aircraft-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.aircraft-icon div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Dark map tiles */
 .leaflet-tile-container img {
     filter: brightness(0.6) contrast(1.2) saturate(0.8) hue-rotate(200deg);

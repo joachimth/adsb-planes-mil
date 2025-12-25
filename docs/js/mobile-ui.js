@@ -438,10 +438,16 @@ async function loadAircraftInfo(aircraft) {
         const hasRealType = info.type && info.type !== info.registration;
 
         if (hasRealType || info.description) {
-            console.log('✅ Viser flytype:', info.type, 'kategori:', getAircraftCategory(info.type));
+            console.log('✅ Viser flytype:', info.type, 'beskrivelse:', info.description);
             document.getElementById('typeName').textContent = info.type || info.description || 'Ukendt flytype';
-            document.getElementById('typeCategory').textContent =
-                info.type ? getAircraftCategory(info.type) : 'Information ikke tilgængelig';
+
+            // Show description as category if available, otherwise generic message
+            if (info.description && info.description !== info.type) {
+                document.getElementById('typeCategory').textContent = info.description;
+            } else {
+                document.getElementById('typeCategory').textContent = 'Commercial aircraft';
+            }
+
             document.getElementById('typeIcon').textContent =
                 info.type ? getAircraftTypeIcon(info.type) : '✈️';
         } else {
