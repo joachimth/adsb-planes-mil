@@ -434,7 +434,10 @@ async function loadAircraftInfo(aircraft) {
         }
 
         // Display type information
-        if (info.type || info.description) {
+        // Check if type is just the registration duplicated (no real type data)
+        const hasRealType = info.type && info.type !== info.registration;
+
+        if (hasRealType || info.description) {
             console.log('✅ Viser flytype:', info.type, 'kategori:', getAircraftCategory(info.type));
             document.getElementById('typeName').textContent = info.type || info.description || 'Ukendt flytype';
             document.getElementById('typeCategory').textContent =
@@ -442,11 +445,11 @@ async function loadAircraftInfo(aircraft) {
             document.getElementById('typeIcon').textContent =
                 info.type ? getAircraftTypeIcon(info.type) : '✈️';
         } else {
-            console.warn('⚠️ Ingen type eller description - viser default unknown state');
+            console.warn(`⚠️ Ingen rigtig flytype (type="${info.type}" === registration="${info.registration}") - viser unknown state`);
             // Show default unknown state
-            document.getElementById('typeName').textContent = 'Ukendt flytype';
-            document.getElementById('typeCategory').textContent = 'Information ikke tilgængelig';
-            document.getElementById('typeIcon').textContent = '✈️';
+            document.getElementById('typeName').textContent = 'Flytype ikke tilgængelig';
+            document.getElementById('typeCategory').textContent = 'Information er klassificeret eller utilgængelig';
+            document.getElementById('typeIcon').textContent = '❓';
         }
 
         // Display photo if available
