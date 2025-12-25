@@ -401,14 +401,27 @@ function initRegionSelector() {
 
     // Get all region buttons
     const regionButtons = document.querySelectorAll('.region-btn');
+    console.log(`🔍 Fundet ${regionButtons.length} region buttons`);
 
     // Set initial active state
+    let activeSet = false;
     regionButtons.forEach(btn => {
+        // First remove active from all buttons
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+
+        // Then add active to the selected region
         if (btn.dataset.region === state.selectedRegion) {
             btn.classList.add('active');
             btn.setAttribute('aria-pressed', 'true');
+            activeSet = true;
+            console.log(`✅ Active class sat på region: ${state.selectedRegion}`);
         }
     });
+
+    if (!activeSet) {
+        console.warn(`⚠️ Ingen region button matchede '${state.selectedRegion}'`);
+    }
 
     // Add event listeners to region buttons
     regionButtons.forEach(btn => {
