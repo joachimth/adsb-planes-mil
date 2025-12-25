@@ -27,7 +27,7 @@ const state = {
 const API_CONFIG = {
     proxyUrl: 'https://corsproxy.io/?url=',
     militaryUrl: 'https://api.adsb.lol/v2/mil',
-    allAircraftUrl: 'https://api.adsb.lol/v2/point',  // + /{lat}/{lon}/{radius_nm}
+    allAircraftBaseUrl: 'https://api.adsb.lol/v2',  // Will use /lat/{lat}/lon/{lon}/dist/{distance}
     updateInterval: 30000, // 30 seconds
     maxAircraft: 500  // Performance limit
 };
@@ -122,10 +122,12 @@ async function fetchAircraftData() {
         const [lat, lon] = region.center;
         const radiusNM = calculateRadiusFromBbox(region.bbox);
 
-        const baseUrl = `${API_CONFIG.allAircraftUrl}/${lat}/${lon}/${radiusNM}`;
+        // ADSB.lol API v2 format: /lat/{lat}/lon/{lon}/dist/{distance}
+        const baseUrl = `${API_CONFIG.allAircraftBaseUrl}/lat/${lat}/lon/${lon}/dist/${radiusNM}`;
         apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(baseUrl);
         console.log(`✅ BRUGER REGION-BASED API (${radiusNM} NM radius) for ALLE fly`);
         console.log(`📍 Center: [${lat}, ${lon}], Region: ${state.selectedRegion}`);
+        console.log(`🔗 API URL: ${baseUrl}`);
     } else {
         // Military-only endpoint
         apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(API_CONFIG.militaryUrl);
