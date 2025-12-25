@@ -3,11 +3,12 @@
  * Orkestrerer alle moduler og håndterer dataflow
  */
 
-import { initMap, updateMap } from './map_section_mobile.js';
+import { initMap, updateMap, setMapRegion } from './map_section_mobile.js';
 import { initMobileUI, showEmergencyAlert, hideEmergencyAlert, showStatusIndicator, hideStatusIndicator, determineAircraftCategory } from './mobile-ui.js';
 import { initFilterBar, updateFilterCounts, shouldShowAircraft, getFilterState } from './filter-bar.js';
 import { initListView, toggleListView, updateListView } from './list-view.js';
 import { loadSquawkCodes } from './squawk-lookup.js';
+import { filterAircraftByRegion, getRegion, loadRegionPreference, saveRegionPreference } from './regions.js';
 
 console.log("✈️ MilAir Watch Mobile startet...");
 
@@ -15,6 +16,7 @@ console.log("✈️ MilAir Watch Mobile startet...");
 const state = {
     allAircraft: [],
     filteredAircraft: [],
+    selectedRegion: 'nordic', // Will be loaded from localStorage
     lastUpdated: null,
     isLoading: false,
     abortController: null
@@ -39,6 +41,9 @@ async function main() {
         initMobileUI();
         initFilterBar(onFilterChange, onListViewToggle);
         initListView();
+
+        // Initialize region selector
+        initRegionSelector();
 
         // Load squawk codes database (non-blocking)
         loadSquawkCodes().catch(err => {
@@ -166,13 +171,17 @@ function processAircraftData() {
 function applyFilters() {
     const filterState = getFilterState();
 
-    // Filter aircraft based on active filters
-    state.filteredAircraft = state.allAircraft.filter(aircraft => {
+    // Step 1: Filter by region first
+    let regionFiltered = filterAircraftByRegion(state.allAircraft, state.selectedRegion);
+    console.log(`🌍 ${regionFiltered.length} fly i region '${state.selectedRegion}' (af ${state.allAircraft.length} total)`);
+
+    // Step 2: Filter by category (military/emergency/special)
+    state.filteredAircraft = regionFiltered.filter(aircraft => {
         const category = determineAircraftCategory(aircraft);
         return shouldShowAircraft(aircraft, category);
     });
 
-    console.log(`📊 ${state.filteredAircraft.length} fly efter filtrering`);
+    console.log(`📊 ${state.filteredAircraft.length} fly efter alle filtre`);
 
     // Update map
     updateMap(state.filteredAircraft);
@@ -202,6 +211,59 @@ function onListViewToggle(isActive) {
     if (isActive) {
         updateListView(state.filteredAircraft);
     }
+}
+
+/**
+ * Initialize region selector
+ */
+function initRegionSelector() {
+    // Load saved region preference
+    state.selectedRegion = loadRegionPreference();
+    console.log(`🌍 Valgt region: ${state.selectedRegion}`);
+
+    // Set initial checked state for radio buttons
+    const regionRadios = document.querySelectorAll('.region-radio');
+    regionRadios.forEach(radio => {
+        if (radio.value === state.selectedRegion) {
+            radio.checked = true;
+        }
+    });
+
+    // Add event listeners to region radio buttons
+    regionRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                onRegionChange(e.target.value);
+            }
+        });
+    });
+
+    // Set initial map region
+    const region = getRegion(state.selectedRegion);
+    if (region) {
+        setMapRegion(region);
+    }
+}
+
+/**
+ * Handle region change
+ */
+function onRegionChange(newRegion) {
+    console.log(`🌍 Region ændret: ${state.selectedRegion} → ${newRegion}`);
+
+    state.selectedRegion = newRegion;
+
+    // Save to localStorage
+    saveRegionPreference(newRegion);
+
+    // Update map view
+    const region = getRegion(newRegion);
+    if (region) {
+        setMapRegion(region);
+    }
+
+    // Re-apply filters with new region
+    applyFilters();
 }
 
 /**

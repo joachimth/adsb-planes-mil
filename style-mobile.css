@@ -821,6 +821,84 @@ body {
 }
 
 /* ========================================
+   REGION SELECTOR
+   ======================================== */
+.region-selector {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: 0;
+}
+
+.region-option {
+    display: flex;
+    align-items: center;
+    padding: var(--space-md);
+    background: var(--radar-surface-elevated);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    user-select: none;
+}
+
+.region-option:hover {
+    background: var(--radar-surface-hover);
+    border-color: var(--accent-primary);
+}
+
+.region-option:active {
+    transform: scale(0.98);
+}
+
+.region-radio {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-default);
+    border-radius: 50%;
+    margin-right: var(--space-md);
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color var(--transition-fast);
+}
+
+.region-radio:checked {
+    border-color: var(--accent-primary);
+    background: var(--radar-bg);
+}
+
+.region-radio:checked::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--accent-primary);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.region-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.region-option:has(.region-radio:checked) {
+    background: var(--radar-surface-hover);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+.region-option:has(.region-radio:checked) .region-label {
+    color: var(--accent-primary);
+}
+
+/* ========================================
    LIST VIEW
    ======================================== */
 .list-view {
