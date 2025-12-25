@@ -11,6 +11,7 @@ import { getSquawkDescription } from './squawk-lookup.js';
 // Map state
 let myMap;
 let flightMarkersLayer;
+let boundingBoxLayer = null;
 let followedAircraft = null;
 
 // Color-coded icons
@@ -225,4 +226,59 @@ export function isFollowingAircraft() {
  */
 export function getFollowedAircraft() {
     return followedAircraft;
+}
+
+/**
+ * Set map region (zoom and bounding box)
+ * @param {Object} region - Region object from regions.js
+ */
+export function setMapRegion(region) {
+    if (!myMap) {
+        console.warn("⚠️ Kort ikke initialiseret endnu");
+        return;
+    }
+
+    console.log(`📍 Sætter kort region: ${region.name}`);
+
+    // Remove existing bounding box if any
+    if (boundingBoxLayer) {
+        myMap.removeLayer(boundingBoxLayer);
+        boundingBoxLayer = null;
+    }
+
+    // Set map view to region center and zoom
+    myMap.setView(region.center, region.zoom, {
+        animate: true,
+        duration: 0.8
+    });
+
+    // Draw bounding box if region has one (not global)
+    if (region.bbox) {
+        const [west, south, east, north] = region.bbox;
+
+        // Create rectangle bounds
+        const bounds = [[south, west], [north, east]];
+
+        // Create semi-transparent rectangle
+        boundingBoxLayer = L.rectangle(bounds, {
+            color: '#00d4ff',         // Cyan border
+            weight: 2,
+            opacity: 0.6,
+            fillColor: '#00d4ff',     // Cyan fill
+            fillOpacity: 0.08,
+            dashArray: '5, 10',        // Dashed line
+            interactive: false         // Don't interfere with clicks
+        }).addTo(myMap);
+
+        // Add tooltip with region name
+        boundingBoxLayer.bindTooltip(region.name, {
+            permanent: false,
+            direction: 'center',
+            className: 'region-bbox-tooltip'
+        });
+
+        console.log(`📦 Bounding box tegnet for ${region.name}`);
+    } else {
+        console.log(`🌐 Global region - ingen bounding box`);
+    }
 }
