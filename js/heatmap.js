@@ -26,6 +26,14 @@ export function initHeatmap(map) {
         return;
     }
 
+    // Set initial active mode button (density is default)
+    const modeButtons = document.querySelectorAll('.heatmap-mode-btn');
+    modeButtons.forEach(btn => {
+        if (btn.dataset.mode === currentMode) {
+            btn.classList.add('active');
+        }
+    });
+
     // Toggle heatmap on/off
     toggleHeatmap.addEventListener('click', () => {
         isHeatmapActive = !isHeatmapActive;
@@ -48,7 +56,6 @@ export function initHeatmap(map) {
     });
 
     // Mode buttons
-    const modeButtons = document.querySelectorAll('.heatmap-mode-btn');
     modeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const mode = btn.dataset.mode;
@@ -127,20 +134,22 @@ function updateHeatmap(map, aircraftData) {
             }
 
             heatmapLayer = L.heatLayer(heatmapData, {
-                radius: 25,
-                blur: 35,
-                maxZoom: 10,
+                radius: 30,           // Større radius for bedre synlighed
+                blur: 25,             // Mindre blur for mere defineret heatmap
+                maxZoom: 18,          // Vis heatmap ved alle zoom levels
                 max: 1.0,
+                minOpacity: 0.5,      // Minimum opacity for bedre synlighed
                 gradient: {
-                    0.0: 'blue',
-                    0.25: 'cyan',
-                    0.5: 'lime',
-                    0.75: 'yellow',
-                    1.0: 'red'
+                    0.0: 'rgba(0, 0, 255, 0.8)',      // Blå med opacity
+                    0.25: 'rgba(0, 255, 255, 0.8)',   // Cyan
+                    0.5: 'rgba(0, 255, 0, 0.9)',      // Grøn
+                    0.75: 'rgba(255, 255, 0, 0.9)',   // Gul
+                    1.0: 'rgba(255, 0, 0, 1.0)'       // Rød
                 }
             }).addTo(map);
 
             console.log(`✅ Heatmap genereret med ${heatmapData.length} datapunkter (${currentMode})`);
+            console.log(`🎨 Heatmap tilføjet til kort med opacity ${heatmapLayer.options.minOpacity}`);
         }
     } catch (error) {
         console.error("❌ Fejl ved opdatering af heatmap:", error);
