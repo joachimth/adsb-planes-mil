@@ -851,18 +851,28 @@ VIGTIGT: Brug ikke til navigation eller sikkerhedskritiske formål.`);
 export function determineAircraftCategory(aircraft) {
     const squawk = aircraft.squawk;
 
-    // Emergency
+    // Emergency (highest priority)
     if (['7500', '7600', '7700'].includes(squawk)) {
         return 'emergency';
     }
 
-    // Military (simplified - in real app, use squawk_codes.json)
+    // Special squawk codes
+    const specialSquawks = ['7000', '1200', '0020', '0021', '0022', '0023', '0024', '0025',
+                           '0030', '0031', '0032', '0033', '0100', '1255', '1277', '7400'];
+    if (specialSquawks.includes(squawk)) {
+        return 'special';
+    }
+
+    // Military squawk ranges
     const militaryRanges = [
         [4400, 4477],
         [7401, 7477],
         [7610, 7676],
         [4000, 4000],
-        [7777, 7777]
+        [7777, 7777],
+        [3000, 3777],
+        [5000, 5377],
+        [4575, 4575]
     ];
 
     const squawkNum = parseInt(squawk, 10);
@@ -874,15 +884,16 @@ export function determineAircraftCategory(aircraft) {
         }
     }
 
-    // Special
-    return 'special';
+    // Everything else is civilian
+    return 'civilian';
 }
 
 function getCategoryLabel(category) {
     const labels = {
         'emergency': 'NØD',
         'military': 'MILITÆR',
-        'special': 'SPECIAL'
+        'special': 'SPECIAL',
+        'civilian': 'CIVIL'
     };
     return labels[category] || 'CIVIL';
 }

@@ -17,6 +17,7 @@ const state = {
     allAircraft: [],
     filteredAircraft: [],
     selectedRegion: 'nordic', // Will be loaded from localStorage
+    showingAllAircraft: false, // Track if we're currently showing all aircraft
     lastUpdated: null,
     isLoading: false,
     abortController: null
@@ -25,9 +26,35 @@ const state = {
 // API Configuration
 const API_CONFIG = {
     proxyUrl: 'https://corsproxy.io/?url=',
-    baseUrl: 'https://api.adsb.lol/v2/mil',
-    updateInterval: 30000 // 30 seconds
+    militaryUrl: 'https://api.adsb.lol/v2/mil',
+    allAircraftUrl: 'https://api.adsb.lol/v2/point',  // + /{lat}/{lon}/{radius_nm}
+    updateInterval: 30000, // 30 seconds
+    maxAircraft: 500  // Performance limit
 };
+
+/**
+ * Calculate radius in nautical miles from bounding box
+ * @param {Array} bbox - [west, south, east, north]
+ * @returns {number} - Radius in nautical miles
+ */
+function calculateRadiusFromBbox(bbox) {
+    if (!bbox) return 500; // Default for global
+
+    const [west, south, east, north] = bbox;
+
+    // Calculate diagonal distance as approximate radius
+    const latDiff = north - south;
+    const lonDiff = east - west;
+
+    // Convert to nautical miles (1 degree ~ 60 NM)
+    const latNM = latDiff * 60;
+    const lonNM = lonDiff * 60 * Math.cos((south + north) / 2 * Math.PI / 180);
+
+    // Diagonal / 2 = radius
+    const radius = Math.sqrt(latNM * latNM + lonNM * lonNM) / 2;
+
+    return Math.ceil(radius);
+}
 
 /**
  * Main application entry point
@@ -80,7 +107,25 @@ async function fetchAircraftData() {
     }
 
     state.abortController = new AbortController();
-    const apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(API_CONFIG.baseUrl);
+
+    // Select API endpoint based on filter state
+    const filterState = getFilterState();
+    let apiUrl;
+
+    if (filterState.showAllAircraft && state.selectedRegion !== 'global') {
+        // Region-based endpoint for all aircraft
+        const region = getRegion(state.selectedRegion);
+        const [lat, lon] = region.center;
+        const radiusNM = calculateRadiusFromBbox(region.bbox);
+
+        const baseUrl = `${API_CONFIG.allAircraftUrl}/${lat}/${lon}/${radiusNM}`;
+        apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(baseUrl);
+        console.log(`🌐 Bruger region-based API (${radiusNM} NM radius)`);
+    } else {
+        // Military-only endpoint
+        apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(API_CONFIG.militaryUrl);
+        console.log("🪖 Bruger militær-only API");
+    }
 
     console.log("🔄 Henter flydata...");
     showStatusIndicator("Henter data...");
@@ -99,7 +144,15 @@ async function fetchAircraftData() {
         }
 
         const data = await response.json();
-        state.allAircraft = data.ac || [];
+        let aircraftList = data.ac || [];
+
+        // Performance safeguard: Limit to maxAircraft
+        if (aircraftList.length > API_CONFIG.maxAircraft) {
+            console.warn(`⚠️ ${aircraftList.length} fly fundet - begrænser til ${API_CONFIG.maxAircraft}`);
+            aircraftList = aircraftList.slice(0, API_CONFIG.maxAircraft);
+        }
+
+        state.allAircraft = aircraftList;
         state.lastUpdated = new Date();
 
         console.log(`✅ ${state.allAircraft.length} fly hentet`);
@@ -197,7 +250,16 @@ function applyFilters() {
  */
 function onFilterChange(newFilterState) {
     console.log("🎛️ Filtre ændret:", newFilterState);
-    applyFilters();
+
+    // Check if "Alle Fly" toggle changed (requires different API endpoint)
+    if (newFilterState.showAllAircraft !== state.showingAllAircraft) {
+        console.log(`🔄 API endpoint switch: ${state.showingAllAircraft ? 'Alle→Militær' : 'Militær→Alle'}`);
+        state.showingAllAircraft = newFilterState.showAllAircraft;
+        fetchAircraftData(); // Re-fetch with new endpoint
+    } else {
+        // Just category filters changed - reapply to existing data
+        applyFilters();
+    }
 }
 
 /**
