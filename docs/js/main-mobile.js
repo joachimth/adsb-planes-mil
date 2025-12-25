@@ -29,7 +29,8 @@ const API_CONFIG = {
     militaryUrl: 'https://api.adsb.lol/v2/mil',
     allAircraftBaseUrl: 'https://api.adsb.lol/v2',  // Will use /lat/{lat}/lon/{lon}/dist/{distance}
     updateInterval: 30000, // 30 seconds
-    maxAircraft: 500  // Performance limit
+    maxAircraft: 500,  // Performance limit
+    maxRadius: 250  // Max radius in NM for ADSB.lol API
 };
 
 /**
@@ -54,6 +55,36 @@ function calculateRadiusFromBbox(bbox) {
     const radius = Math.sqrt(latNM * latNM + lonNM * lonNM) / 2;
 
     return Math.ceil(radius);
+}
+
+/**
+ * Generate grid points to cover bounding box with max 250 NM radius circles
+ * @param {Array} bbox - [west, south, east, north]
+ * @returns {Array} - Array of {lat, lon} points
+ */
+function generateGridPoints(bbox) {
+    const [west, south, east, north] = bbox;
+    const gridPoints = [];
+
+    // Grid spacing: 250 NM * 1.4 = ~350 NM for good overlap
+    const gridSpacingNM = 350;
+    const latSpacing = gridSpacingNM / 60; // degrees
+
+    let lat = south;
+    while (lat <= north) {
+        // Longitude spacing adjusted for latitude
+        const lonSpacing = gridSpacingNM / (60 * Math.cos(lat * Math.PI / 180));
+
+        let lon = west;
+        while (lon <= east) {
+            gridPoints.push({ lat: lat, lon: lon });
+            lon += lonSpacing;
+        }
+        lat += latSpacing;
+    }
+
+    console.log(`📐 Genereret ${gridPoints.length} grid points for at dække område`);
+    return gridPoints;
 }
 
 /**
@@ -114,47 +145,86 @@ async function fetchAircraftData() {
     console.log("🔍 filterState.showAllAircraft:", filterState.showAllAircraft);
     console.log("🔍 state.selectedRegion:", state.selectedRegion);
 
-    let apiUrl;
-
-    if (filterState.showAllAircraft && state.selectedRegion !== 'global') {
-        // Region-based endpoint for all aircraft
-        const region = getRegion(state.selectedRegion);
-        const [lat, lon] = region.center;
-        const radiusNM = calculateRadiusFromBbox(region.bbox);
-
-        // ADSB.lol API v2 format: /lat/{lat}/lon/{lon}/dist/{distance}
-        const baseUrl = `${API_CONFIG.allAircraftBaseUrl}/lat/${lat}/lon/${lon}/dist/${radiusNM}`;
-        apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(baseUrl);
-        console.log(`✅ BRUGER REGION-BASED API (${radiusNM} NM radius) for ALLE fly`);
-        console.log(`📍 Center: [${lat}, ${lon}], Region: ${state.selectedRegion}`);
-        console.log(`🔗 API URL: ${baseUrl}`);
-    } else {
-        // Military-only endpoint
-        apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(API_CONFIG.militaryUrl);
-        console.log("🪖 BRUGER MILITÆR-ONLY API");
-        if (filterState.showAllAircraft) {
-            console.warn("⚠️ Alle fly aktiveret men region er global - bruger militær API");
-        }
-    }
-
     console.log("🔄 Henter flydata...");
     showStatusIndicator("Henter data...");
     state.isLoading = true;
 
     try {
-        const response = await fetch(apiUrl, {
-            signal: state.abortController.signal,
-            headers: {
-                'Accept': 'application/json'
+        let aircraftList = [];
+
+        if (filterState.showAllAircraft && state.selectedRegion !== 'global') {
+            // Region-based endpoint for all aircraft
+            const region = getRegion(state.selectedRegion);
+            const radiusNM = calculateRadiusFromBbox(region.bbox);
+
+            if (radiusNM > API_CONFIG.maxRadius) {
+                // Use grid approach for large areas
+                console.log(`📐 Område for stort (${radiusNM} NM) - bruger grid med ${API_CONFIG.maxRadius} NM celler`);
+                const gridPoints = generateGridPoints(region.bbox);
+
+                console.log(`🔄 Henter data fra ${gridPoints.length} grid punkter...`);
+                showStatusIndicator(`Henter data fra ${gridPoints.length} områder...`);
+
+                // Fetch from all grid points in parallel (with limit)
+                const batchSize = 5; // Max concurrent requests
+                const allAircraft = new Map(); // Use Map to deduplicate by hex
+
+                for (let i = 0; i < gridPoints.length; i += batchSize) {
+                    const batch = gridPoints.slice(i, i + batchSize);
+                    const promises = batch.map(point =>
+                        fetchFromPoint(point.lat, point.lon, API_CONFIG.maxRadius, state.abortController.signal)
+                    );
+
+                    const results = await Promise.allSettled(promises);
+
+                    results.forEach((result, idx) => {
+                        if (result.status === 'fulfilled') {
+                            result.value.forEach(aircraft => {
+                                // Deduplicate by hex (ICAO identifier)
+                                if (aircraft.hex) {
+                                    allAircraft.set(aircraft.hex, aircraft);
+                                }
+                            });
+                        } else {
+                            console.warn(`⚠️ Grid punkt ${i + idx} fejlede:`, result.reason);
+                        }
+                    });
+
+                    console.log(`✅ Batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(gridPoints.length/batchSize)} færdig. Total: ${allAircraft.size} unikke fly`);
+                }
+
+                aircraftList = Array.from(allAircraft.values());
+                console.log(`✅ ${aircraftList.length} unikke fly hentet fra ${gridPoints.length} grid punkter`);
+
+            } else {
+                // Single API call for small areas
+                const [lat, lon] = region.center;
+                console.log(`✅ BRUGER ENKELT API CALL (${radiusNM} NM radius)`);
+                console.log(`📍 Center: [${lat}, ${lon}], Region: ${state.selectedRegion}`);
+
+                aircraftList = await fetchFromPoint(lat, lon, radiusNM, state.abortController.signal);
             }
-        });
 
-        if (!response.ok) {
-            throw new Error(`API fejl: ${response.status}`);
+        } else {
+            // Military-only endpoint
+            const apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(API_CONFIG.militaryUrl);
+            console.log("🪖 BRUGER MILITÆR-ONLY API");
+            if (filterState.showAllAircraft) {
+                console.warn("⚠️ Alle fly aktiveret men region er global - bruger militær API");
+            }
+
+            const response = await fetch(apiUrl, {
+                signal: state.abortController.signal,
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`API fejl: ${response.status}`);
+            }
+
+            const data = await response.json();
+            aircraftList = data.ac || [];
         }
-
-        const data = await response.json();
-        let aircraftList = data.ac || [];
 
         // Performance safeguard: Limit to maxAircraft
         if (aircraftList.length > API_CONFIG.maxAircraft) {
@@ -165,13 +235,7 @@ async function fetchAircraftData() {
         state.allAircraft = aircraftList;
         state.lastUpdated = new Date();
 
-        console.log(`✅ ${state.allAircraft.length} fly hentet`);
-
-        // Debug: Log første aircraft for at se struktur
-        if (state.allAircraft.length > 0) {
-            console.log('🔍 Første aircraft objekt:', state.allAircraft[0]);
-            console.log('🔍 Felter i aircraft:', Object.keys(state.allAircraft[0]));
-        }
+        console.log(`✅ ${state.allAircraft.length} fly i final dataset`);
 
         // Process and update UI
         processAircraftData();
@@ -190,6 +254,31 @@ async function fetchAircraftData() {
         hideStatusIndicator();
         state.isLoading = false;
     }
+}
+
+/**
+ * Fetch aircraft from a single point
+ * @param {number} lat - Latitude
+ * @param {number} lon - Longitude
+ * @param {number} radiusNM - Radius in nautical miles
+ * @param {AbortSignal} signal - Abort signal
+ * @returns {Promise<Array>} - Array of aircraft
+ */
+async function fetchFromPoint(lat, lon, radiusNM, signal) {
+    const baseUrl = `${API_CONFIG.allAircraftBaseUrl}/lat/${lat}/lon/${lon}/dist/${radiusNM}`;
+    const apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(baseUrl);
+
+    const response = await fetch(apiUrl, {
+        signal: signal,
+        headers: { 'Accept': 'application/json' }
+    });
+
+    if (!response.ok) {
+        throw new Error(`API fejl: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.ac || [];
 }
 
 /**
