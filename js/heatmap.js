@@ -85,55 +85,66 @@ export function updateHeatmapData(map, aircraftData) {
  * Generer og vis heatmap baseret på mode
  */
 function updateHeatmap(map, aircraftData) {
-    // Clear existing heatmap
-    if (heatmapLayer) {
-        map.removeLayer(heatmapLayer);
-        heatmapLayer = null;
-    }
+    try {
+        // Clear existing heatmap
+        if (heatmapLayer) {
+            map.removeLayer(heatmapLayer);
+            heatmapLayer = null;
+        }
 
-    if (!aircraftData || aircraftData.length === 0) {
-        console.warn("⚠️ Ingen aircraft data til heatmap");
-        return;
-    }
+        if (!aircraftData || aircraftData.length === 0) {
+            console.warn("⚠️ Ingen aircraft data til heatmap");
+            return;
+        }
 
-    let heatmapData = [];
-    let legendTitle = '';
+        let heatmapData = [];
+        let legendTitle = '';
 
-    switch (currentMode) {
-        case 'density':
-            heatmapData = generateDensityHeatmap(aircraftData);
-            legendTitle = 'Densitet';
-            break;
-        case 'altitude':
-            heatmapData = generateAltitudeHeatmap(aircraftData);
-            legendTitle = 'Højde';
-            break;
-        case 'type':
-            heatmapData = generateTypeHeatmap(aircraftData);
-            legendTitle = 'Flytype';
-            break;
-    }
+        switch (currentMode) {
+            case 'density':
+                heatmapData = generateDensityHeatmap(aircraftData);
+                legendTitle = 'Densitet';
+                break;
+            case 'altitude':
+                heatmapData = generateAltitudeHeatmap(aircraftData);
+                legendTitle = 'Højde';
+                break;
+            case 'type':
+                heatmapData = generateTypeHeatmap(aircraftData);
+                legendTitle = 'Flytype';
+                break;
+        }
 
-    // Update legend
-    updateLegend(legendTitle, heatmapData);
+        // Update legend
+        updateLegend(legendTitle, heatmapData);
 
-    // Create heatmap layer
-    if (heatmapData.length > 0) {
-        heatmapLayer = L.heatLayer(heatmapData, {
-            radius: 25,
-            blur: 35,
-            maxZoom: 10,
-            max: 1.0,
-            gradient: {
-                0.0: 'blue',
-                0.25: 'cyan',
-                0.5: 'lime',
-                0.75: 'yellow',
-                1.0: 'red'
+        // Create heatmap layer
+        if (heatmapData.length > 0) {
+            // Check if L.heatLayer exists
+            if (typeof L.heatLayer !== 'function') {
+                console.error("❌ Leaflet.heat plugin ikke indlæst!");
+                return;
             }
-        }).addTo(map);
 
-        console.log(`✅ Heatmap genereret med ${heatmapData.length} datapunkter (${currentMode})`);
+            heatmapLayer = L.heatLayer(heatmapData, {
+                radius: 25,
+                blur: 35,
+                maxZoom: 10,
+                max: 1.0,
+                gradient: {
+                    0.0: 'blue',
+                    0.25: 'cyan',
+                    0.5: 'lime',
+                    0.75: 'yellow',
+                    1.0: 'red'
+                }
+            }).addTo(map);
+
+            console.log(`✅ Heatmap genereret med ${heatmapData.length} datapunkter (${currentMode})`);
+        }
+    } catch (error) {
+        console.error("❌ Fejl ved opdatering af heatmap:", error);
+        console.error("Error details:", error.message, error.stack);
     }
 }
 
@@ -201,16 +212,19 @@ function generateTypeHeatmap(aircraftData) {
         'civilian': 0.3     // Green-cyan (lowest)
     };
 
-    aircraftData.forEach(aircraft => {
-        if (aircraft.lat && aircraft.lon) {
-            // Get category (need to import determineAircraftCategory)
-            // For now, use a simple check
-            const category = getAircraftCategory(aircraft);
-            const intensity = typeIntensity[category] || 0.5;
+    try {
+        aircraftData.forEach(aircraft => {
+            if (aircraft && aircraft.lat && aircraft.lon) {
+                // Get category
+                const category = getAircraftCategory(aircraft);
+                const intensity = typeIntensity[category] || 0.5;
 
-            heatmapData.push([aircraft.lat, aircraft.lon, intensity]);
-        }
-    });
+                heatmapData.push([aircraft.lat, aircraft.lon, intensity]);
+            }
+        });
+    } catch (error) {
+        console.error("❌ Fejl i generateTypeHeatmap:", error);
+    }
 
     return heatmapData;
 }
@@ -219,56 +233,84 @@ function generateTypeHeatmap(aircraftData) {
  * Enkel kategori bestemmelse (duplicate af mobile-ui.js)
  */
 function getAircraftCategory(aircraft) {
-    const squawk = aircraft.squawk;
-
-    // Emergency
-    if (['7500', '7600', '7700'].includes(squawk)) {
-        return 'emergency';
-    }
-
-    // Military ranges (simplified)
-    const squawkNum = parseInt(squawk, 10);
-    if (!isNaN(squawkNum)) {
-        if ((squawkNum >= 4400 && squawkNum <= 4477) ||
-            (squawkNum >= 7401 && squawkNum <= 7477) ||
-            squawkNum === 4000 || squawkNum === 7777) {
-            return 'military';
+    try {
+        if (!aircraft || !aircraft.squawk) {
+            return 'civilian';
         }
-    }
 
-    // Special
-    const specialSquawks = ['7000', '1200', '0020', '0021', '0030', '0033'];
-    if (specialSquawks.includes(squawk)) {
-        return 'special';
-    }
+        const squawk = aircraft.squawk;
 
-    return 'civilian';
+        // Emergency (highest priority)
+        if (['7500', '7600', '7700'].includes(squawk)) {
+            return 'emergency';
+        }
+
+        // Special squawk codes
+        const specialSquawks = ['7000', '1200', '0020', '0021', '0022', '0023', '0024', '0025',
+                               '0030', '0031', '0032', '0033', '0100', '1255', '1277', '7400'];
+        if (specialSquawks.includes(squawk)) {
+            return 'special';
+        }
+
+        // Special squawk ranges (civilian special missions)
+        const squawkNum = parseInt(squawk, 10);
+        if (!isNaN(squawkNum)) {
+            // Special ranges first
+            if ((squawkNum >= 3000 && squawkNum <= 3777) ||
+                (squawkNum >= 5000 && squawkNum <= 5377)) {
+                return 'special';
+            }
+
+            // Military ranges
+            if ((squawkNum >= 4400 && squawkNum <= 4477) ||
+                (squawkNum >= 7401 && squawkNum <= 7477) ||
+                (squawkNum >= 7610 && squawkNum <= 7676) ||
+                squawkNum === 4000 || squawkNum === 7777 || squawkNum === 4575) {
+                return 'military';
+            }
+        }
+
+        return 'civilian';
+    } catch (error) {
+        console.error("❌ Fejl i getAircraftCategory:", error);
+        return 'civilian';
+    }
 }
 
 /**
  * Opdater legend baseret på mode
  */
 function updateLegend(title, heatmapData) {
-    document.getElementById('heatmapLegendTitle').textContent = title;
+    try {
+        const titleElement = document.getElementById('heatmapLegendTitle');
+        const maxLabel = document.getElementById('heatmapLegendMax');
 
-    // Calculate max value
-    let maxValue = 0;
-    heatmapData.forEach(point => {
-        maxValue = Math.max(maxValue, point[2] || 0);
-    });
+        if (!titleElement || !maxLabel) {
+            console.warn("⚠️ Heatmap legend elementer ikke fundet");
+            return;
+        }
 
-    const maxLabel = document.getElementById('heatmapLegendMax');
+        titleElement.textContent = title;
 
-    switch (currentMode) {
-        case 'density':
-            maxLabel.textContent = `${heatmapData.length} fly`;
-            break;
-        case 'altitude':
-            maxLabel.textContent = `${Math.round(maxValue * 45000)} ft`;
-            break;
-        case 'type':
-            maxLabel.textContent = 'Militær';
-            break;
+        // Calculate max value
+        let maxValue = 0;
+        heatmapData.forEach(point => {
+            maxValue = Math.max(maxValue, point[2] || 0);
+        });
+
+        switch (currentMode) {
+            case 'density':
+                maxLabel.textContent = `${heatmapData.length} fly`;
+                break;
+            case 'altitude':
+                maxLabel.textContent = `${Math.round(maxValue * 45000)} ft`;
+                break;
+            case 'type':
+                maxLabel.textContent = 'Militær';
+                break;
+        }
+    } catch (error) {
+        console.error("❌ Fejl ved opdatering af legend:", error);
     }
 }
 
