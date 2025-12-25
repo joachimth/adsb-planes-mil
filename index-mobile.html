@@ -241,26 +241,21 @@
                     <h3 class="menu-section-title">🌍 Geografisk Område</h3>
 
                     <div class="region-selector" id="regionSelector">
-                        <label class="region-option">
-                            <input type="radio" name="region" value="denmark" class="region-radio">
-                            <span class="region-label">🇩🇰 Danmark</span>
-                        </label>
-                        <label class="region-option">
-                            <input type="radio" name="region" value="nordic" class="region-radio" checked>
-                            <span class="region-label">🌍 Nordeuropa</span>
-                        </label>
-                        <label class="region-option">
-                            <input type="radio" name="region" value="europe" class="region-radio">
-                            <span class="region-label">🌍 Europa</span>
-                        </label>
-                        <label class="region-option">
-                            <input type="radio" name="region" value="northatlantic" class="region-radio">
-                            <span class="region-label">🌊 Nordatlanten</span>
-                        </label>
-                        <label class="region-option">
-                            <input type="radio" name="region" value="global" class="region-radio">
-                            <span class="region-label">🌐 Global</span>
-                        </label>
+                        <button class="region-btn" data-region="denmark" aria-pressed="false">
+                            🇩🇰 Danmark
+                        </button>
+                        <button class="region-btn active" data-region="nordic" aria-pressed="true">
+                            🌍 Nordeuropa
+                        </button>
+                        <button class="region-btn" data-region="europe" aria-pressed="false">
+                            🌍 Europa
+                        </button>
+                        <button class="region-btn" data-region="northatlantic" aria-pressed="false">
+                            🌊 Nordatlanten
+                        </button>
+                        <button class="region-btn" data-region="global" aria-pressed="false">
+                            🌐 Global
+                        </button>
                     </div>
                 </section>
 

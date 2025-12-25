@@ -841,72 +841,37 @@ body {
     padding: 0;
 }
 
-.region-option {
-    display: flex;
-    align-items: center;
-    padding: var(--space-md);
+.region-btn {
+    width: 100%;
+    padding: var(--space-md) var(--space-lg);
     background: var(--radar-surface-elevated);
     border: 2px solid transparent;
     border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    user-select: none;
-}
-
-.region-option:hover {
-    background: var(--radar-surface-hover);
-    border-color: var(--accent-primary);
-}
-
-.region-option:active {
-    transform: scale(0.98);
-}
-
-.region-radio {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--border-default);
-    border-radius: 50%;
-    margin-right: var(--space-md);
-    position: relative;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: border-color var(--transition-fast);
-}
-
-.region-radio:checked {
-    border-color: var(--accent-primary);
-    background: var(--radar-bg);
-}
-
-.region-radio:checked::after {
-    content: '';
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: var(--accent-primary);
-    border-radius: 50%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.region-label {
+    color: var(--text-primary);
     font-size: 16px;
     font-weight: 500;
-    color: var(--text-primary);
-    flex: 1;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+    font-family: inherit;
 }
 
-.region-option:has(.region-radio:checked) {
+.region-btn:hover {
     background: var(--radar-surface-hover);
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 1px var(--accent-primary);
+    border-color: rgba(0, 212, 255, 0.3);
+    transform: translateX(4px);
 }
 
-.region-option:has(.region-radio:checked) .region-label {
+.region-btn:active {
+    transform: translateX(4px) scale(0.98);
+}
+
+.region-btn.active {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: var(--accent-primary);
     color: var(--accent-primary);
+    box-shadow: 0 0 0 1px var(--accent-primary);
+    font-weight: 600;
 }
 
 /* ========================================
