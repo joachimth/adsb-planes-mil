@@ -33,13 +33,13 @@ export function initHeatmap(map) {
         if (btn.dataset.mode === currentMode) {
             btn.classList.add('active');
 
-            // Apply inline styles for visibility
-            btn.style.background = 'rgba(255, 100, 50, 0.4)';
-            btn.style.border = '3px solid #ff6432';
+            // Pænere inline styles
+            btn.style.background = 'rgba(255, 100, 50, 0.25)';
+            btn.style.border = '2px solid #ff6432';
             btn.style.borderColor = '#ff6432';
             btn.style.color = '#ff6432';
-            btn.style.boxShadow = '0 0 12px #ff6432, 0 0 0 3px #ff6432';
-            btn.style.fontWeight = '700';
+            btn.style.boxShadow = '0 0 8px rgba(255, 100, 50, 0.6)';
+            btn.style.fontWeight = '600';
         }
     });
 
@@ -76,13 +76,13 @@ export function initHeatmap(map) {
             });
             btn.classList.add('active');
 
-            // Apply inline styles
-            btn.style.background = 'rgba(255, 100, 50, 0.4)';
-            btn.style.border = '3px solid #ff6432';
+            // Pænere inline styles
+            btn.style.background = 'rgba(255, 100, 50, 0.25)';
+            btn.style.border = '2px solid #ff6432';
             btn.style.borderColor = '#ff6432';
             btn.style.color = '#ff6432';
-            btn.style.boxShadow = '0 0 12px #ff6432, 0 0 0 3px #ff6432';
-            btn.style.fontWeight = '700';
+            btn.style.boxShadow = '0 0 8px rgba(255, 100, 50, 0.6)';
+            btn.style.fontWeight = '600';
 
             // Update mode and regenerate heatmap
             currentMode = mode;
