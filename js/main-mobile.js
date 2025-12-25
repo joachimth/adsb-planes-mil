@@ -11,6 +11,22 @@ import { loadSquawkCodes } from './squawk-lookup.js';
 import { filterAircraftByRegion, getRegion, loadRegionPreference, saveRegionPreference } from './regions.js';
 import { initHeatmap, updateHeatmapData, isHeatmapEnabled } from './heatmap.js';
 
+// Global error handler - fanger alle uncaught errors
+window.addEventListener('error', (event) => {
+    console.error('🔴 Global error fanget:', event.message);
+    console.error('📍 File:', event.filename, 'Line:', event.lineno, 'Col:', event.colno);
+    console.error('📋 Stack:', event.error?.stack);
+    event.preventDefault(); // Forhindrer Eruda fejl
+    return true;
+});
+
+// Fang unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('🔴 Unhandled promise rejection:', event.reason);
+    event.preventDefault(); // Forhindrer Eruda fejl
+    return true;
+});
+
 console.log("✈️ MilAir Watch Mobile startet...");
 
 // Application state
