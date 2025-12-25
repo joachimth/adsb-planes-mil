@@ -110,6 +110,10 @@ async function fetchAircraftData() {
 
     // Select API endpoint based on filter state
     const filterState = getFilterState();
+    console.log("🔍 fetchAircraftData - filterState:", filterState);
+    console.log("🔍 filterState.showAllAircraft:", filterState.showAllAircraft);
+    console.log("🔍 state.selectedRegion:", state.selectedRegion);
+
     let apiUrl;
 
     if (filterState.showAllAircraft && state.selectedRegion !== 'global') {
@@ -120,11 +124,15 @@ async function fetchAircraftData() {
 
         const baseUrl = `${API_CONFIG.allAircraftUrl}/${lat}/${lon}/${radiusNM}`;
         apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(baseUrl);
-        console.log(`🌐 Bruger region-based API (${radiusNM} NM radius)`);
+        console.log(`✅ BRUGER REGION-BASED API (${radiusNM} NM radius) for ALLE fly`);
+        console.log(`📍 Center: [${lat}, ${lon}], Region: ${state.selectedRegion}`);
     } else {
         // Military-only endpoint
         apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(API_CONFIG.militaryUrl);
-        console.log("🪖 Bruger militær-only API");
+        console.log("🪖 BRUGER MILITÆR-ONLY API");
+        if (filterState.showAllAircraft) {
+            console.warn("⚠️ Alle fly aktiveret men region er global - bruger militær API");
+        }
     }
 
     console.log("🔄 Henter flydata...");
@@ -249,14 +257,18 @@ function applyFilters() {
  * Filter change callback
  */
 function onFilterChange(newFilterState) {
-    console.log("🎛️ Filtre ændret:", newFilterState);
+    console.log("🎛️ onFilterChange kaldt med:", newFilterState);
+    console.log("🎛️ state.showingAllAircraft før:", state.showingAllAircraft);
+    console.log("🎛️ newFilterState.showAllAircraft:", newFilterState.showAllAircraft);
 
     // Check if "Alle Fly" toggle changed (requires different API endpoint)
     if (newFilterState.showAllAircraft !== state.showingAllAircraft) {
-        console.log(`🔄 API endpoint switch: ${state.showingAllAircraft ? 'Alle→Militær' : 'Militær→Alle'}`);
+        console.log(`🔄 API endpoint switch detekteret: ${state.showingAllAircraft ? 'Alle→Militær' : 'Militær→Alle'}`);
         state.showingAllAircraft = newFilterState.showAllAircraft;
+        console.log("🔄 Kalder fetchAircraftData() med ny endpoint...");
         fetchAircraftData(); // Re-fetch with new endpoint
     } else {
+        console.log("🔄 Kun kategori-filtre ændret, genbruger data");
         // Just category filters changed - reapply to existing data
         applyFilters();
     }

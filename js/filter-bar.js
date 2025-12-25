@@ -85,7 +85,12 @@ function toggleFilter(filterType, button) {
  * Toggle "Alle Fly" filter (civilian aircraft)
  */
 function toggleAllAircraftFilter(button) {
+    console.log("🔘 toggleAllAircraftFilter kaldt, før:", filterState.showAllAircraft);
+
     filterState.showAllAircraft = !filterState.showAllAircraft;
+
+    console.log("🔘 toggleAllAircraftFilter efter toggle:", filterState.showAllAircraft);
+    console.log("🔘 Callback defineret?", !!onFilterChangeCallback);
 
     // Update button state
     if (filterState.showAllAircraft) {
@@ -103,7 +108,10 @@ function toggleAllAircraftFilter(button) {
 
     // Trigger callback - this will switch API endpoint
     if (onFilterChangeCallback) {
+        console.log("📞 Kalder onFilterChangeCallback med:", filterState);
         onFilterChangeCallback(filterState);
+    } else {
+        console.error("❌ onFilterChangeCallback er ikke defineret!");
     }
 
     // Haptic feedback
