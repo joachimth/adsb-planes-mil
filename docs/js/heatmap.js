@@ -134,19 +134,24 @@ function updateHeatmap(map, aircraftData) {
             }
 
             heatmapLayer = L.heatLayer(heatmapData, {
-                radius: 30,           // Større radius for bedre synlighed
-                blur: 25,             // Mindre blur for mere defineret heatmap
+                radius: 50,           // Meget større radius for MAX synlighed
+                blur: 40,             // Større blur for bedre blend
                 maxZoom: 18,          // Vis heatmap ved alle zoom levels
                 max: 1.0,
-                minOpacity: 0.5,      // Minimum opacity for bedre synlighed
+                minOpacity: 0.7,      // Høj minimum opacity
                 gradient: {
-                    0.0: 'rgba(0, 0, 255, 0.8)',      // Blå med opacity
-                    0.25: 'rgba(0, 255, 255, 0.8)',   // Cyan
-                    0.5: 'rgba(0, 255, 0, 0.9)',      // Grøn
-                    0.75: 'rgba(255, 255, 0, 0.9)',   // Gul
-                    1.0: 'rgba(255, 0, 0, 1.0)'       // Rød
+                    0.0: 'rgba(0, 0, 255, 1.0)',      // Fuldt blå
+                    0.25: 'rgba(0, 255, 255, 1.0)',   // Fuldt cyan
+                    0.5: 'rgba(0, 255, 0, 1.0)',      // Fuldt grøn
+                    0.75: 'rgba(255, 255, 0, 1.0)',   // Fuldt gul
+                    1.0: 'rgba(255, 0, 0, 1.0)'       // Fuldt rød
                 }
             }).addTo(map);
+
+            // Sæt z-index så heatmap er under markers men over tiles
+            if (heatmapLayer._container) {
+                heatmapLayer._container.style.zIndex = 400;
+            }
 
             console.log(`✅ Heatmap genereret med ${heatmapData.length} datapunkter (${currentMode})`);
             console.log(`🎨 Heatmap tilføjet til kort med opacity ${heatmapLayer.options.minOpacity}`);
