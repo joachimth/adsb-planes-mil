@@ -398,12 +398,21 @@ async function loadAircraftInfo(aircraft) {
         console.log(`🔄 Henter aircraft info for reg=${registration}, hex=${hex}`);
         const info = await getAircraftInfo(registration, hex);
         console.log('📦 Aircraft info modtaget:', info);
+        console.log('📦 info.type:', info?.type);
+        console.log('📦 info.description:', info?.description);
+        console.log('📦 info.photoUrl:', info?.photoUrl);
 
         // Always hide photo container initially
         const photoContainer = document.getElementById('aircraftPhotoContainer');
         photoContainer.style.display = 'none';
 
         if (!info || (!info.type && !info.description && !info.photoUrl)) {
+            console.warn('⚠️ Viser unknown state fordi:', {
+                infoExists: !!info,
+                hasType: !!info?.type,
+                hasDesc: !!info?.description,
+                hasPhoto: !!info?.photoUrl
+            });
             // No data available - show unknown aircraft state
             showUnknownAircraftState();
 
@@ -425,17 +434,22 @@ async function loadAircraftInfo(aircraft) {
         }
 
         // Display type information
-        if (info.type || info.description) {
+        // Check if type is just the registration duplicated (no real type data)
+        const hasRealType = info.type && info.type !== info.registration;
+
+        if (hasRealType || info.description) {
+            console.log('✅ Viser flytype:', info.type, 'kategori:', getAircraftCategory(info.type));
             document.getElementById('typeName').textContent = info.type || info.description || 'Ukendt flytype';
             document.getElementById('typeCategory').textContent =
                 info.type ? getAircraftCategory(info.type) : 'Information ikke tilgængelig';
             document.getElementById('typeIcon').textContent =
                 info.type ? getAircraftTypeIcon(info.type) : '✈️';
         } else {
+            console.warn(`⚠️ Ingen rigtig flytype (type="${info.type}" === registration="${info.registration}") - viser unknown state`);
             // Show default unknown state
-            document.getElementById('typeName').textContent = 'Ukendt flytype';
-            document.getElementById('typeCategory').textContent = 'Information ikke tilgængelig';
-            document.getElementById('typeIcon').textContent = '✈️';
+            document.getElementById('typeName').textContent = 'Flytype ikke tilgængelig';
+            document.getElementById('typeCategory').textContent = 'Information er klassificeret eller utilgængelig';
+            document.getElementById('typeIcon').textContent = '❓';
         }
 
         // Display photo if available

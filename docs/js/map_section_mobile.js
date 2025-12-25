@@ -114,10 +114,17 @@ export function updateMap(aircraftData) {
     const emergencyFlights = [];
     let hasEmergency = false;
 
+    console.log(`📍 updateMap: Modtaget ${aircraftData.length} fly`);
+    let skippedCount = 0;
+
     // Create markers
     aircraftData.forEach(aircraft => {
         // Skip aircraft without position
-        if (!aircraft.lat || !aircraft.lon) return;
+        if (!aircraft.lat || !aircraft.lon) {
+            skippedCount++;
+            console.warn(`⚠️ Springer over ${aircraft.flight || aircraft.r}: Ingen position (lat=${aircraft.lat}, lon=${aircraft.lon})`);
+            return;
+        }
 
         const category = determineAircraftCategory(aircraft);
         const icon = icons[category] || icons.civilian;
@@ -168,6 +175,9 @@ export function updateMap(aircraftData) {
 
         marker.addTo(flightMarkersLayer);
     });
+
+    const markersCreated = aircraftData.length - skippedCount;
+    console.log(`✅ Oprettede ${markersCreated} markers (${skippedCount} sprunget over pga. manglende position)`);
 
     // Auto-zoom to emergency flights if any
     if (hasEmergency && emergencyFlights.length > 0) {
