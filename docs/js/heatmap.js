@@ -29,8 +29,17 @@ export function initHeatmap(map) {
     // Set initial active mode button (density is default)
     const modeButtons = document.querySelectorAll('.heatmap-mode-btn');
     modeButtons.forEach(btn => {
+        btn.style.cssText = ''; // Clear inline styles first
         if (btn.dataset.mode === currentMode) {
             btn.classList.add('active');
+
+            // Apply inline styles for visibility
+            btn.style.background = 'rgba(255, 100, 50, 0.4)';
+            btn.style.border = '3px solid #ff6432';
+            btn.style.borderColor = '#ff6432';
+            btn.style.color = '#ff6432';
+            btn.style.boxShadow = '0 0 12px #ff6432, 0 0 0 3px #ff6432';
+            btn.style.fontWeight = '700';
         }
     });
 
@@ -61,8 +70,19 @@ export function initHeatmap(map) {
             const mode = btn.dataset.mode;
 
             // Update active button
-            modeButtons.forEach(b => b.classList.remove('active'));
+            modeButtons.forEach(b => {
+                b.classList.remove('active');
+                b.style.cssText = ''; // Clear inline styles
+            });
             btn.classList.add('active');
+
+            // Apply inline styles
+            btn.style.background = 'rgba(255, 100, 50, 0.4)';
+            btn.style.border = '3px solid #ff6432';
+            btn.style.borderColor = '#ff6432';
+            btn.style.color = '#ff6432';
+            btn.style.boxShadow = '0 0 12px #ff6432, 0 0 0 3px #ff6432';
+            btn.style.fontWeight = '700';
 
             // Update mode and regenerate heatmap
             currentMode = mode;

@@ -406,16 +406,26 @@ function initRegionSelector() {
     // Set initial active state
     let activeSet = false;
     regionButtons.forEach(btn => {
-        // First remove active from all buttons
+        // First remove active from all buttons and clear inline styles
         btn.classList.remove('active');
         btn.setAttribute('aria-pressed', 'false');
+        btn.style.cssText = '';
 
         // Then add active to the selected region
         if (btn.dataset.region === state.selectedRegion) {
             btn.classList.add('active');
             btn.setAttribute('aria-pressed', 'true');
+
+            // FORCE inline styles for maximum visibility
+            btn.style.background = 'rgba(0, 212, 255, 0.4)';
+            btn.style.border = '3px solid #00d4ff';
+            btn.style.borderColor = '#00d4ff';
+            btn.style.color = '#00d4ff';
+            btn.style.boxShadow = '0 0 12px #00d4ff, 0 0 0 3px #00d4ff';
+            btn.style.fontWeight = '700';
+
             activeSet = true;
-            console.log(`✅ Active class sat på region: ${state.selectedRegion}`);
+            console.log(`✅ Active class OG inline styles sat på region: ${state.selectedRegion}`);
         }
     });
 
@@ -432,9 +442,18 @@ function initRegionSelector() {
             regionButtons.forEach(b => {
                 b.classList.remove('active');
                 b.setAttribute('aria-pressed', 'false');
+                b.style.cssText = ''; // Clear inline styles
             });
             btn.classList.add('active');
             btn.setAttribute('aria-pressed', 'true');
+
+            // Apply inline styles
+            btn.style.background = 'rgba(0, 212, 255, 0.4)';
+            btn.style.border = '3px solid #00d4ff';
+            btn.style.borderColor = '#00d4ff';
+            btn.style.color = '#00d4ff';
+            btn.style.boxShadow = '0 0 12px #00d4ff, 0 0 0 3px #00d4ff';
+            btn.style.fontWeight = '700';
 
             // Trigger region change
             onRegionChange(selectedRegion);
