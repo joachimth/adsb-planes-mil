@@ -880,11 +880,11 @@ body {
 }
 
 .region-btn.active {
-    background: rgba(0, 212, 255, 0.15);
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-    box-shadow: 0 0 0 1px var(--accent-primary);
-    font-weight: 600;
+    background: rgba(0, 212, 255, 0.25) !important;
+    border-color: var(--accent-primary) !important;
+    color: var(--accent-primary) !important;
+    box-shadow: 0 0 0 2px var(--accent-primary) !important;
+    font-weight: 700 !important;
 }
 
 /* ========================================
@@ -919,11 +919,11 @@ body {
 }
 
 .heatmap-mode-btn.active {
-    background: rgba(255, 100, 50, 0.15);
-    border-color: #ff6432;
-    color: #ff6432;
-    font-weight: 600;
-    box-shadow: 0 0 0 1px #ff6432;
+    background: rgba(255, 100, 50, 0.25) !important;
+    border-color: #ff6432 !important;
+    color: #ff6432 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 0 0 2px #ff6432 !important;
 }
 
 /* Heatmap legend */
