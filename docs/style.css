@@ -888,6 +888,92 @@ body {
 }
 
 /* ========================================
+   HEATMAP CONTROLS
+   ======================================== */
+.heatmap-mode-selector {
+    display: flex;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    padding-top: 0;
+    flex-wrap: wrap;
+}
+
+.heatmap-mode-btn {
+    flex: 1;
+    min-width: 80px;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--radar-surface-elevated);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-family: inherit;
+}
+
+.heatmap-mode-btn:hover {
+    background: var(--radar-surface-hover);
+    border-color: rgba(255, 100, 50, 0.3);
+}
+
+.heatmap-mode-btn.active {
+    background: rgba(255, 100, 50, 0.15);
+    border-color: #ff6432;
+    color: #ff6432;
+    font-weight: 600;
+    box-shadow: 0 0 0 1px #ff6432;
+}
+
+/* Heatmap legend */
+.heatmap-legend {
+    position: absolute;
+    bottom: calc(72px + env(safe-area-inset-bottom) + var(--space-md));
+    right: var(--space-md);
+    background: rgba(10, 14, 26, 0.95);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    min-width: 120px;
+    z-index: calc(var(--z-map) + 2);
+    backdrop-filter: blur(10px);
+}
+
+.heatmap-legend-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+}
+
+.heatmap-legend-gradient {
+    height: 100px;
+    background: linear-gradient(to top,
+        rgba(0, 0, 255, 0.8) 0%,
+        rgba(0, 255, 255, 0.8) 25%,
+        rgba(0, 255, 0, 0.8) 50%,
+        rgba(255, 255, 0, 0.8) 75%,
+        rgba(255, 0, 0, 0.8) 100%
+    );
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.heatmap-legend-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.heatmap-legend-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* ========================================
    LIST VIEW
    ======================================== */
 .list-view {

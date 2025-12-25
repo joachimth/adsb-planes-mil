@@ -3,12 +3,13 @@
  * Orkestrerer alle moduler og håndterer dataflow
  */
 
-import { initMap, updateMap, setMapRegion } from './map_section_mobile.js';
+import { initMap, updateMap, setMapRegion, getMap } from './map_section_mobile.js';
 import { initMobileUI, showEmergencyAlert, hideEmergencyAlert, showStatusIndicator, hideStatusIndicator, determineAircraftCategory } from './mobile-ui.js';
 import { initFilterBar, updateFilterCounts, shouldShowAircraft, getFilterState } from './filter-bar.js';
 import { initListView, toggleListView, updateListView } from './list-view.js';
 import { loadSquawkCodes } from './squawk-lookup.js';
 import { filterAircraftByRegion, getRegion, loadRegionPreference, saveRegionPreference } from './regions.js';
+import { initHeatmap, updateHeatmapData, isHeatmapEnabled } from './heatmap.js';
 
 console.log("✈️ MilAir Watch Mobile startet...");
 
@@ -99,6 +100,12 @@ async function main() {
         initMobileUI();
         initFilterBar(onFilterChange, onListViewToggle);
         initListView();
+
+        // Initialize heatmap
+        const map = getMap();
+        if (map) {
+            initHeatmap(map);
+        }
 
         // Initialize region selector
         initRegionSelector();
@@ -337,6 +344,12 @@ function applyFilters() {
 
     // Update map
     updateMap(state.filteredAircraft);
+
+    // Update heatmap with filtered data
+    const map = getMap();
+    if (map) {
+        updateHeatmapData(map, state.filteredAircraft);
+    }
 
     // Update list view if active
     if (filterState.listViewActive) {

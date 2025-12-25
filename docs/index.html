@@ -56,6 +56,22 @@
         <!-- Fullscreen Map -->
         <div class="map-container">
             <div id="map" role="application" aria-label="Interaktivt radar-kort"></div>
+
+            <!-- Heatmap Legend (hidden by default) -->
+            <div class="heatmap-legend" id="heatmapLegend" style="display: none;">
+                <div class="heatmap-legend-title" id="heatmapLegendTitle">Densitet</div>
+                <div class="heatmap-legend-gradient"></div>
+                <div class="heatmap-legend-labels">
+                    <div class="heatmap-legend-label">
+                        <span>Høj</span>
+                        <span id="heatmapLegendMax">---</span>
+                    </div>
+                    <div class="heatmap-legend-label">
+                        <span>Lav</span>
+                        <span id="heatmapLegendMin">0</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- List View (Hidden by default) -->
@@ -259,6 +275,33 @@
                     </div>
                 </section>
 
+                <!-- Heatmap Section -->
+                <section class="menu-section">
+                    <h3 class="menu-section-title">🗺️ Heatmap Visning</h3>
+
+                    <div class="menu-item">
+                        <span class="menu-item-icon">🔥</span>
+                        <div class="menu-item-text">
+                            <span class="menu-item-label">Heatmap</span>
+                            <span class="menu-item-desc">Vis flyaktivitet som heatmap</span>
+                        </div>
+                        <div class="toggle-switch" id="toggleHeatmap" role="switch" aria-checked="false"></div>
+                    </div>
+
+                    <!-- Heatmap mode selector (shown when heatmap is active) -->
+                    <div class="heatmap-mode-selector" id="heatmapModeSelector" style="display: none;">
+                        <button class="heatmap-mode-btn active" data-mode="density">
+                            📊 Densitet
+                        </button>
+                        <button class="heatmap-mode-btn" data-mode="altitude">
+                            📈 Højde
+                        </button>
+                        <button class="heatmap-mode-btn" data-mode="type">
+                            ✈️ Flytype
+                        </button>
+                    </div>
+                </section>
+
                 <!-- Settings Section -->
                 <section class="menu-section">
                     <h3 class="menu-section-title">Præferencer</h3>
@@ -344,6 +387,9 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet.heat plugin for heatmap visualization -->
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
     <!-- App JavaScript (ES6 Module) -->
     <script type="module" src="js/main-mobile.js"></script>
