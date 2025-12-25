@@ -295,20 +295,32 @@ function initRegionSelector() {
     state.selectedRegion = loadRegionPreference();
     console.log(`🌍 Valgt region: ${state.selectedRegion}`);
 
-    // Set initial checked state for radio buttons
-    const regionRadios = document.querySelectorAll('.region-radio');
-    regionRadios.forEach(radio => {
-        if (radio.value === state.selectedRegion) {
-            radio.checked = true;
+    // Get all region buttons
+    const regionButtons = document.querySelectorAll('.region-btn');
+
+    // Set initial active state
+    regionButtons.forEach(btn => {
+        if (btn.dataset.region === state.selectedRegion) {
+            btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
         }
     });
 
-    // Add event listeners to region radio buttons
-    regionRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                onRegionChange(e.target.value);
-            }
+    // Add event listeners to region buttons
+    regionButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const selectedRegion = btn.dataset.region;
+
+            // Update button states
+            regionButtons.forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-pressed', 'false');
+            });
+            btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
+
+            // Trigger region change
+            onRegionChange(selectedRegion);
         });
     });
 
