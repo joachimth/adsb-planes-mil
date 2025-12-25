@@ -378,8 +378,14 @@ function populateBottomSheet(aircraft) {
  * Load and display aircraft information (async)
  */
 async function loadAircraftInfo(aircraft) {
-    const icao = aircraft.r;
-    if (!icao) {
+    const registration = aircraft.r;
+    const hex = aircraft.hex || null;
+
+    // Debug logging
+    console.log('🔍 loadAircraftInfo kaldt:', { registration, hex, aircraft });
+
+    if (!registration && !hex) {
+        console.warn('⚠️ Ingen registration eller hex - skjuler aircraft info');
         hideAircraftInfo();
         return;
     }
@@ -388,8 +394,10 @@ async function loadAircraftInfo(aircraft) {
         // Show loading state
         showAircraftInfoLoading();
 
-        // Fetch aircraft info
-        const info = await getAircraftInfo(icao);
+        // Fetch aircraft info (updated API)
+        console.log(`🔄 Henter aircraft info for reg=${registration}, hex=${hex}`);
+        const info = await getAircraftInfo(registration, hex);
+        console.log('📦 Aircraft info modtaget:', info);
 
         // Always hide photo container initially
         const photoContainer = document.getElementById('aircraftPhotoContainer');
