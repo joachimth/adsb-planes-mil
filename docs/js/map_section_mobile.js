@@ -110,16 +110,16 @@ function createAircraftIcon(aircraft, category) {
     // Get aircraft heading (track or heading field)
     const heading = aircraft.track || aircraft.heading || 0;
 
-    // Color based on category
+    // Color based on category (brighter, more saturated)
     const colors = {
-        'military': '#00ff88',    // Green
-        'emergency': '#ff3366',   // Red
-        'special': '#ffaa00',     // Yellow/Amber
-        'civilian': '#00d4ff'     // Cyan/Blue
+        'military': '#00ff66',    // Bright green
+        'emergency': '#ff0044',   // Bright red
+        'special': '#ffcc00',     // Bright yellow
+        'civilian': '#00ddff'     // Bright cyan
     };
     const color = colors[category] || colors.civilian;
 
-    // Create HTML for rotated aircraft icon
+    // Create HTML for rotated aircraft icon with enhanced glow
     const html = `
         <div style="
             transform: rotate(${heading}deg);
@@ -127,10 +127,14 @@ function createAircraftIcon(aircraft, category) {
             font-size: 24px;
             line-height: 1;
             text-shadow:
-                0 0 3px rgba(0,0,0,0.8),
-                0 0 6px ${color},
-                0 0 9px ${color};
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+                0 0 2px rgba(0,0,0,0.9),
+                0 0 8px ${color},
+                0 0 12px ${color},
+                0 0 16px ${color};
+            filter:
+                drop-shadow(0 0 4px ${color})
+                drop-shadow(0 2px 6px rgba(0,0,0,0.6))
+                brightness(1.1);
         ">✈️</div>
     `;
 

@@ -862,27 +862,39 @@ export function determineAircraftCategory(aircraft) {
         return 'emergency';
     }
 
-    // Special squawk codes
+    // Special squawk codes (including civilian special operations)
     const specialSquawks = ['7000', '1200', '0020', '0021', '0022', '0023', '0024', '0025',
                            '0030', '0031', '0032', '0033', '0100', '1255', '1277', '7400'];
     if (specialSquawks.includes(squawk)) {
         return 'special';
     }
 
-    // Military squawk ranges
+    // Special squawk ranges (civilian special missions)
+    const specialRanges = [
+        [3000, 3777],  // Diverse specialmissioner (often civilian)
+        [5000, 5377]   // Operationelle specialflyvninger
+    ];
+
+    // Military squawk ranges (actual military operations)
     const militaryRanges = [
-        [4400, 4477],
-        [7401, 7477],
-        [7610, 7676],
-        [4000, 4000],
-        [7777, 7777],
-        [3000, 3777],
-        [5000, 5377],
-        [4575, 4575]
+        [4400, 4477],  // Militære reserverede områder
+        [7401, 7477],  // Militære øvelser & UAV-missioner
+        [7610, 7676],  // Specifikke militære missioner
+        [4000, 4000],  // Militære operationer (generelt)
+        [7777, 7777],  // Militær afvisning (interception)
+        [4575, 4575]   // NATO AWACS-flyvning
     ];
 
     const squawkNum = parseInt(squawk, 10);
     if (!isNaN(squawkNum)) {
+        // Check special ranges first
+        for (const [start, end] of specialRanges) {
+            if (squawkNum >= start && squawkNum <= end) {
+                return 'special';
+            }
+        }
+
+        // Then check military ranges
         for (const [start, end] of militaryRanges) {
             if (squawkNum >= start && squawkNum <= end) {
                 return 'military';
