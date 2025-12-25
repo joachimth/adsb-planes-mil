@@ -330,6 +330,11 @@ body {
     background: rgba(255, 170, 0, 0.1);
 }
 
+.filter-btn.all-aircraft.active {
+    color: #00d4ff;  /* Cyan for all aircraft */
+    background: rgba(0, 212, 255, 0.15);
+}
+
 .filter-btn.list-view.active {
     color: var(--accent-primary);
     background: rgba(0, 212, 255, 0.1);
@@ -438,6 +443,12 @@ body {
 .aircraft-status-badge.special {
     background: var(--status-special);
     color: var(--radar-bg);
+}
+
+.aircraft-status-badge.civilian {
+    background: rgba(100, 150, 255, 0.3);
+    color: #88b3ff;
+    border: 1px solid #88b3ff;
 }
 
 @keyframes pulse {

@@ -10,6 +10,7 @@ const filterState = {
     military: true,
     emergency: true,
     special: true,
+    showAllAircraft: false,  // Include civilian aircraft
     listViewActive: false
 };
 
@@ -29,12 +30,14 @@ export function initFilterBar(onFilterChange, onListViewToggle) {
     const militaryBtn = document.getElementById('filterMilitary');
     const emergencyBtn = document.getElementById('filterEmergency');
     const specialBtn = document.getElementById('filterSpecial');
+    const allAircraftBtn = document.getElementById('filterAllAircraft');
     const listBtn = document.getElementById('filterList');
 
     // Add event listeners
     militaryBtn?.addEventListener('click', () => toggleFilter('military', militaryBtn));
     emergencyBtn?.addEventListener('click', () => toggleFilter('emergency', emergencyBtn));
     specialBtn?.addEventListener('click', () => toggleFilter('special', specialBtn));
+    allAircraftBtn?.addEventListener('click', () => toggleAllAircraftFilter(allAircraftBtn));
     listBtn?.addEventListener('click', () => toggleListView(listBtn));
 
     // Load saved filters from localStorage
@@ -73,6 +76,37 @@ function toggleFilter(filterType, button) {
     }
 
     // Haptic feedback (if supported)
+    if (navigator.vibrate) {
+        navigator.vibrate(10);
+    }
+}
+
+/**
+ * Toggle "Alle Fly" filter (civilian aircraft)
+ */
+function toggleAllAircraftFilter(button) {
+    filterState.showAllAircraft = !filterState.showAllAircraft;
+
+    // Update button state
+    if (filterState.showAllAircraft) {
+        button.classList.add('active');
+        button.setAttribute('aria-pressed', 'true');
+        console.log("✈️ Viser ALLE fly (inkl. civile)");
+    } else {
+        button.classList.remove('active');
+        button.setAttribute('aria-pressed', 'false');
+        console.log("🪖 Viser kun militære fly");
+    }
+
+    // Save to localStorage
+    saveFilterState();
+
+    // Trigger callback - this will switch API endpoint
+    if (onFilterChangeCallback) {
+        onFilterChangeCallback(filterState);
+    }
+
+    // Haptic feedback
     if (navigator.vibrate) {
         navigator.vibrate(10);
     }
@@ -199,7 +233,10 @@ export function shouldShowAircraft(aircraft, category) {
     // Emergency always shown
     if (category === 'emergency') return true;
 
-    // Check filter state
+    // Civilian aircraft only shown if "Alle Fly" is active
+    if (category === 'civilian' && !filterState.showAllAircraft) return false;
+
+    // Check filter state for military/special
     if (category === 'military' && !filterState.military) return false;
     if (category === 'special' && !filterState.special) return false;
 

@@ -29,7 +29,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
     <!-- Custom Mobile-First CSS -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style-mobile.css">
 
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://unpkg.com">
@@ -95,6 +95,12 @@
                 <span class="filter-btn-icon">⭐</span>
                 <span class="filter-btn-label">Special</span>
                 <span class="filter-badge" id="specialCount">0</span>
+            </button>
+            <button class="filter-btn all-aircraft" id="filterAllAircraft"
+                    aria-pressed="false" aria-label="Vis alle fly (inkl. civile)">
+                <span class="filter-btn-icon">✈️</span>
+                <span class="filter-btn-label">Alle</span>
+                <span class="filter-badge" id="allAircraftCount" style="display: none;">0</span>
             </button>
             <button class="filter-btn list-view" id="filterList"
                     aria-pressed="false" aria-label="Skift til listevisning">
