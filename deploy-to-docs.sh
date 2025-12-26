@@ -24,6 +24,18 @@ cp js/mobile-ui.js docs/js/
 cp js/filter-bar.js docs/js/
 cp js/list-view.js docs/js/
 cp js/map_section_mobile.js docs/js/
+cp js/regions.js docs/js/
+cp js/heatmap.js docs/js/
+cp js/aircraft-info.js docs/js/
+cp js/squawk-lookup.js docs/js/
+
+# Copy data files
+echo "📊 Copying data files..."
+cp squawk_codes.json docs/
+
+# Copy assets
+echo "🎨 Copying assets..."
+cp favicon.svg docs/
 
 # Update script reference in docs/index.html
 echo "🔧 Updating script reference..."
