@@ -321,35 +321,20 @@ async function fetchFromPoint(lat, lon, radiusNM, signal) {
  * Process aircraft data and update UI
  */
 function processAircraftData() {
-    // Categorize all aircraft
-    const categorized = {
-        military: [],
-        emergency: [],
-        special: [],
-        civilian: []
-    };
-
-    state.allAircraft.forEach(aircraft => {
-        const category = determineAircraftCategory(aircraft);
-        categorized[category].push(aircraft);
+    // Check for emergencies in ALL aircraft (UNFILTERED)
+    const emergencyAircraft = state.allAircraft.filter(a => {
+        const category = determineAircraftCategory(a);
+        return category === 'emergency';
     });
 
-    // Check for emergencies (UNFILTERED) - only show if aircraft has valid position
-    const emergencyWithPosition = categorized.emergency.find(a => a.lat && a.lon);
+    const emergencyWithPosition = emergencyAircraft.find(a => a.lat && a.lon);
     if (emergencyWithPosition) {
         showEmergencyAlert(emergencyWithPosition);
     } else {
         hideEmergencyAlert();
     }
 
-    // Update filter counts
-    updateFilterCounts({
-        military: categorized.military.length,
-        emergency: categorized.emergency.length,
-        special: categorized.special.length
-    });
-
-    // Apply filters
+    // Apply filters (this will also update filter counts)
     applyFilters();
 }
 
@@ -363,13 +348,35 @@ function applyFilters() {
     let regionFiltered = filterAircraftByRegion(state.allAircraft, state.selectedRegion);
     console.log(`🌍 ${regionFiltered.length} fly i region '${state.selectedRegion}' (af ${state.allAircraft.length} total)`);
 
+    // Step 1.5: Categorize region-filtered aircraft and update counts
+    const categorized = {
+        military: [],
+        emergency: [],
+        special: [],
+        civilian: []
+    };
+
+    regionFiltered.forEach(aircraft => {
+        const category = determineAircraftCategory(aircraft);
+        categorized[category].push(aircraft);
+    });
+
+    // Update filter counts based on region-filtered aircraft
+    updateFilterCounts({
+        military: categorized.military.length,
+        emergency: categorized.emergency.length,
+        special: categorized.special.length
+    });
+
+    console.log(`📊 Region counts: ${categorized.military.length} militær, ${categorized.emergency.length} nød, ${categorized.special.length} special, ${categorized.civilian.length} civil`);
+
     // Step 2: Filter by category (military/emergency/special)
     state.filteredAircraft = regionFiltered.filter(aircraft => {
         const category = determineAircraftCategory(aircraft);
         return shouldShowAircraft(aircraft, category);
     });
 
-    console.log(`📊 ${state.filteredAircraft.length} fly efter alle filtre`);
+    console.log(`📊 ${state.filteredAircraft.length} fly efter kategori-filtre`);
 
     // Debug: Check how many have valid coordinates
     const withCoords = state.filteredAircraft.filter(a => a.lat && a.lon);
