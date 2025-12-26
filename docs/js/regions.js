@@ -13,8 +13,8 @@ export const REGIONS = {
     denmark: {
         id: 'denmark',
         name: '🇩🇰 Danmark',
-        center: [56.0, 10.5],
-        zoom: 7,
+        center: [56.2, 11.5],  // Justeret for bedre center
+        zoom: 6,               // Zoomet ud et hak (var 7)
         bbox: [8.0, 54.5, 15.2, 58.0],
         buffer: 100 // km buffer zone
     },
