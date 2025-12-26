@@ -7,6 +7,8 @@ console.log("✅ mobile-ui.js er indlæst.");
 
 import { getSquawkDescription, getSquawkInfo } from './squawk-lookup.js';
 import { getAircraftInfo, getAircraftTypeIcon, getAircraftCategory } from './aircraft-info.js';
+import { fetchAircraftTrace, drawTraceOnMap, clearTrace, formatTimestamp, getTraceStats } from './history.js';
+import { getMap } from './map_section_mobile.js';
 
 // State
 const uiState = {
@@ -34,6 +36,9 @@ export function initMobileUI() {
 
     // Emergency alert
     initEmergencyAlert();
+
+    // Historical data
+    initHistoryUI();
 
     // Request geolocation if enabled
     checkGeolocation();
@@ -918,4 +923,210 @@ function getCategoryLabel(category) {
 
 export function getUserLocation() {
     return uiState.userLocation;
+}
+
+/* ========================================
+   HISTORICAL DATA
+   ======================================== */
+
+/**
+ * Initialize historical data UI
+ */
+function initHistoryUI() {
+    const findTraceBtn = document.getElementById('findTrace');
+    const historyHexInput = document.getElementById('historyHex');
+    const historyDateInput = document.getElementById('historyDate');
+    const historyStatus = document.getElementById('historyStatus');
+    const traceStats = document.getElementById('traceStats');
+
+    if (!findTraceBtn || !historyHexInput || !historyDateInput) {
+        console.warn('⚠️ History UI elementer ikke fundet');
+        return;
+    }
+
+    // Set today as max date
+    const today = new Date().toISOString().split('T')[0];
+    historyDateInput.setAttribute('max', today);
+
+    // Set default date to yesterday (more likely to have data)
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    historyDateInput.value = yesterday.toISOString().split('T')[0];
+
+    // Normalize hex input (convert to lowercase, remove spaces)
+    historyHexInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.toLowerCase().replace(/[^a-f0-9]/g, '');
+    });
+
+    // Handle Find Trace button click
+    findTraceBtn.addEventListener('click', async () => {
+        const hex = historyHexInput.value.trim();
+        const date = historyDateInput.value;
+
+        // Validation
+        if (!hex) {
+            showHistoryStatus('❌ Indtast venligst en ICAO hex kode', 'error');
+            return;
+        }
+
+        if (hex.length !== 6) {
+            showHistoryStatus('❌ ICAO hex skal være 6 tegn', 'error');
+            return;
+        }
+
+        if (!date) {
+            showHistoryStatus('❌ Vælg venligst en dato', 'error');
+            return;
+        }
+
+        // Check if date is not in the future
+        if (new Date(date) > new Date()) {
+            showHistoryStatus('❌ Kan ikke hente data fra fremtiden', 'error');
+            return;
+        }
+
+        console.log(`🔍 Søger efter trace: ${hex} d. ${date}`);
+
+        // Show loading state
+        showHistoryStatus('🔄 Henter historisk rute...', 'loading');
+        findTraceBtn.disabled = true;
+        findTraceBtn.textContent = '⏳ Henter...';
+
+        try {
+            const trace = await fetchAircraftTrace(hex, date);
+
+            if (!trace || !trace.points || trace.points.length === 0) {
+                showHistoryStatus(`❌ Ingen data fundet for ${hex.toUpperCase()} d. ${date}`, 'error');
+                findTraceBtn.disabled = false;
+                findTraceBtn.textContent = '🔎 Find Rute';
+                return;
+            }
+
+            // Clear current view and draw trace
+            const map = getMap();
+            if (map) {
+                clearTrace(map);
+                drawTraceOnMap(trace, map);
+            }
+
+            // Show success message
+            showHistoryStatus(`✅ Rute fundet: ${trace.totalPoints} waypoints`, 'success');
+
+            // Show statistics
+            displayTraceStats(trace);
+
+            // Close hamburger menu to show the trace
+            closeMenu();
+
+            console.log(`✅ Trace vist på kort:`, trace);
+
+        } catch (error) {
+            console.error('❌ Fejl ved hentning af trace:', error);
+
+            let errorMsg = '❌ Kunne ikke hente data. ';
+            if (error.message.includes('404')) {
+                errorMsg += 'Ingen data fundet for denne dato.';
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMsg += 'Netværksfejl - tjek din forbindelse.';
+            } else {
+                errorMsg += 'Prøv igen senere.';
+            }
+
+            showHistoryStatus(errorMsg, 'error');
+
+        } finally {
+            findTraceBtn.disabled = false;
+            findTraceBtn.textContent = '🔎 Find Rute';
+        }
+    });
+
+    // Allow Enter key to trigger search
+    historyHexInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            findTraceBtn.click();
+        }
+    });
+
+    console.log('✅ History UI initialiseret');
+}
+
+/**
+ * Show status message in history panel
+ */
+function showHistoryStatus(message, type = 'info') {
+    const historyStatus = document.getElementById('historyStatus');
+    if (!historyStatus) return;
+
+    historyStatus.textContent = message;
+    historyStatus.className = `history-status ${type}`;
+    historyStatus.style.display = 'block';
+
+    // Auto-hide success messages after 5 seconds
+    if (type === 'success') {
+        setTimeout(() => {
+            historyStatus.style.display = 'none';
+        }, 5000);
+    }
+}
+
+/**
+ * Display trace statistics
+ */
+function displayTraceStats(trace) {
+    const traceStats = document.getElementById('traceStats');
+    if (!traceStats) return;
+
+    const stats = getTraceStats(trace);
+    if (!stats) return;
+
+    const durationHours = Math.floor(stats.duration / 3600);
+    const durationMinutes = Math.floor((stats.duration % 3600) / 60);
+    const durationStr = `${durationHours}t ${durationMinutes}m`;
+
+    traceStats.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">✈️ Aircraft:</span>
+                <span class="stat-value">${trace.registration} (${trace.type})</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">⏱️ Varighed:</span>
+                <span class="stat-value">${durationStr}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">📍 Waypoints:</span>
+                <span class="stat-value">${stats.totalPoints}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">📈 Max højde:</span>
+                <span class="stat-value">${stats.maxAltitude.toLocaleString()} ft</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">📊 Gns. højde:</span>
+                <span class="stat-value">${stats.avgAltitude.toLocaleString()} ft</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">⚡ Max hastighed:</span>
+                <span class="stat-value">${Math.round(stats.maxSpeed)} knots</span>
+            </div>
+        </div>
+    `;
+    traceStats.style.display = 'block';
+}
+
+/**
+ * Close hamburger menu
+ */
+function closeMenu() {
+    const sideMenu = document.getElementById('sideMenu');
+    const menuOverlay = document.getElementById('menuOverlay');
+
+    if (sideMenu) {
+        sideMenu.classList.remove('active');
+    }
+    if (menuOverlay) {
+        menuOverlay.classList.remove('active');
+    }
+
+    uiState.menuVisible = false;
 }

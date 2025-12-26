@@ -10,6 +10,7 @@ import { initListView, toggleListView, updateListView } from './list-view.js';
 import { loadSquawkCodes } from './squawk-lookup.js';
 import { filterAircraftByRegion, getRegion, loadRegionPreference, saveRegionPreference } from './regions.js';
 import { initHeatmap, updateHeatmapData, isHeatmapEnabled } from './heatmap.js';
+import { initHistory } from './history.js';
 
 // Global error handler - fanger alle uncaught errors
 window.addEventListener('error', (event) => {
@@ -122,6 +123,9 @@ async function main() {
         if (map) {
             initHeatmap(map);
         }
+
+        // Initialize history
+        initHistory();
 
         // Initialize region selector
         initRegionSelector();

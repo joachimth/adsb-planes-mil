@@ -26,6 +26,7 @@ cp js/list-view.js docs/js/
 cp js/map_section_mobile.js docs/js/
 cp js/regions.js docs/js/
 cp js/heatmap.js docs/js/
+cp js/history.js docs/js/
 cp js/aircraft-info.js docs/js/
 cp js/squawk-lookup.js docs/js/
 

@@ -302,6 +302,33 @@
                     </div>
                 </section>
 
+                <!-- Historical Data Section -->
+                <section class="menu-section">
+                    <h3 class="menu-section-title">📜 Historiske Data</h3>
+
+                    <div class="history-search-panel">
+                        <div class="history-input-group">
+                            <label for="historyDate" class="history-label">📅 Dato</label>
+                            <input type="date" id="historyDate" class="history-input" max="2025-12-31">
+                        </div>
+
+                        <div class="history-input-group">
+                            <label for="historyHex" class="history-label">🔍 Aircraft (ICAO hex)</label>
+                            <input type="text" id="historyHex" class="history-input"
+                                   placeholder="f.eks. abc123" maxlength="6">
+                            <span class="history-hint">6 tegn hex kode</span>
+                        </div>
+
+                        <button id="findTrace" class="history-btn">
+                            🔎 Find Rute
+                        </button>
+
+                        <div id="historyStatus" class="history-status" style="display: none;"></div>
+
+                        <div id="traceStats" class="trace-stats" style="display: none;"></div>
+                    </div>
+                </section>
+
                 <!-- Settings Section -->
                 <section class="menu-section">
                     <h3 class="menu-section-title">Præferencer</h3>
