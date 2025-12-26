@@ -93,12 +93,14 @@ state.allAircraft
 processAircraftData()
     ↓
     ├─→ determineAircraftCategory() [categorize each aircraft]
+    ├─→ filterAircraftByRegion() [filter by geographic region]
     ├─→ showEmergencyAlert() [if emergency exists]
     ├─→ updateFilterCounts() [update badge counts]
     └─→ applyFiltersAndUpdateUI()
         ↓
         ├─→ Filter by category (military/emergency/special)
         ├─→ updateMap() [Leaflet markers with color coding]
+        ├─→ updateHeatmapData() [if heatmap enabled]
         └─→ updateListView() [sortable aircraft cards]
 ```
 
@@ -124,8 +126,7 @@ adsb-planes-mil/
 │   ├── emergency_alert.html   # Emergency alert box
 │   ├── filter_section.html    # Callsign filter input
 │   ├── squawk_filter.html     # Squawk code filter UI
-│   ├── flight_table.html      # Aircraft data table
-│   └── openapi_checker.html   # API status checker (utility)
+│   └── flight_table.html      # Aircraft data table
 │
 ├── JavaScript Modules (js/):
 │   ├── main.js                # Desktop main controller (348 lines)
@@ -142,7 +143,9 @@ adsb-planes-mil/
 │   │   ├── map_section_mobile.js  # Leaflet map with color markers (218 lines)
 │   │   ├── mobile-ui.js           # Mobile UI components & bottom sheet (872 lines)
 │   │   ├── filter-bar.js          # Bottom filter bar (207 lines)
-│   │   └── list-view.js           # Sortable aircraft list (260 lines)
+│   │   ├── list-view.js           # Sortable aircraft list (260 lines)
+│   │   ├── regions.js             # Geographic region filtering (190 lines)
+│   │   └── heatmap.js             # Heatmap visualization modes (280 lines)
 │   │
 │   └── Shared Modules:
 │       ├── aircraft-info.js       # Aircraft type/info lookup (299 lines)
@@ -153,8 +156,7 @@ adsb-planes-mil/
 │   └── style-mobile.css       # Mobile dark radar theme
 │
 ├── Data/Configuration:
-│   ├── squawk_codes.json      # Squawk code database
-│   └── user_preferences.json  # User preferences (map center/zoom)
+│   └── squawk_codes.json      # Squawk code database
 │
 └── docs/                      # GitHub Pages deployment folder
     ├── index.html             # (copy of index-mobile.html)
@@ -366,6 +368,9 @@ import { initMobileUI, showEmergencyAlert, hideEmergencyAlert,
 import { initFilterBar, updateFilterCounts, shouldShowAircraft,
          getFilterState } from './filter-bar.js';
 import { initListView, toggleListView, updateListView } from './list-view.js';
+import { filterAircraftByRegion, getRegion, loadRegionPreference,
+         saveRegionPreference } from './regions.js';
+import { initHeatmap, updateHeatmapData, isHeatmapEnabled } from './heatmap.js';
 import { loadSquawkCodes } from './squawk-lookup.js';
 ```
 
@@ -507,7 +512,123 @@ export function updateMap(filteredAircraft)
 export function centerMapOnAircraft(aircraft)
 ```
 
-### 6. Squawk Lookup Module (`js/squawk-lookup.js`)
+### 6. Regions Module (`js/regions.js`)
+
+**Type:** ES6 Module
+**Lines:** 190
+**Responsibilities:**
+- Geographic region definitions and filtering
+- Bounding box calculations
+- Distance calculations (Haversine formula)
+- Region preference persistence (localStorage)
+
+**Region Definitions:**
+```javascript
+REGIONS = {
+    denmark: {
+        name: '🇩🇰 Danmark',
+        center: [56.2, 11.5],
+        zoom: 6,
+        bbox: [8.0, 54.5, 15.2, 58.0],
+        buffer: 100  // km buffer zone
+    },
+    nordic: {
+        name: '🌍 Nordeuropa',
+        center: [60.0, 15.0],
+        zoom: 4,
+        bbox: [-10.0, 50.0, 40.0, 70.0],
+        buffer: 200
+    },
+    europe: {
+        name: '🌍 Europa',
+        center: [50.0, 10.0],
+        zoom: 4,
+        bbox: [-15.0, 35.0, 40.0, 70.0],
+        buffer: 250
+    },
+    northatlantic: {
+        name: '🌊 Nordatlanten',
+        center: [55.0, -30.0],
+        zoom: 3,
+        bbox: [-60.0, 40.0, 0.0, 70.0],
+        buffer: 300
+    },
+    global: {
+        name: '🌐 Global',
+        center: [40.0, 0.0],
+        zoom: 2,
+        bbox: null,  // No filtering for global
+        buffer: 0
+    }
+}
+```
+
+**Key Features:**
+- Bounding box filtering with buffer zones
+- Supports global view (no geographic filtering)
+- Saves user's selected region to localStorage
+- Default region: Nordeuropa
+
+**Exported Functions:**
+```javascript
+export const REGIONS
+export const DEFAULT_REGION
+export function filterAircraftByRegion(aircraft, regionId)
+export function getRegion(regionId)
+export function loadRegionPreference()
+export function saveRegionPreference(regionId)
+```
+
+### 7. Heatmap Module (`js/heatmap.js`)
+
+**Type:** ES6 Module
+**Lines:** 280
+**Responsibilities:**
+- Heatmap visualization layer (Leaflet.heat)
+- Multiple visualization modes
+- Dynamic intensity calculation
+- Color gradient configuration
+
+**Heatmap Modes:**
+```javascript
+'density'   - Aircraft concentration (default)
+'altitude'  - Color by altitude (red=high, blue=low)
+'type'      - Color by aircraft type/category
+```
+
+**Key Features:**
+- Toggle heatmap on/off
+- Switch between visualization modes
+- Adjustable intensity and radius
+- Auto-scales based on aircraft count
+- Legend display for current mode
+
+**Color Gradients:**
+```javascript
+// Density mode: Yellow → Red
+{0.4: 'yellow', 0.65: 'orange', 1: 'red'}
+
+// Altitude mode: Blue → Red
+{0.2: 'blue', 0.5: 'cyan', 0.7: 'yellow', 1: 'red'}
+
+// Type mode: Category colors
+Military: green, Emergency: red, Special: yellow, Civilian: blue
+```
+
+**Exported Functions:**
+```javascript
+export function initHeatmap(map)
+export function updateHeatmapData(aircraft)
+export function isHeatmapEnabled()
+export function clearHeatmap()
+```
+
+**UI Components:**
+- Toggle button: `#toggleHeatmap`
+- Mode selector: `.heatmap-mode-btn` (density/altitude/type)
+- Legend: `#heatmapLegend`
+
+### 8. Squawk Lookup Module (`js/squawk-lookup.js`)
 
 **Type:** ES6 Module (shared)
 **Lines:** 114
@@ -1676,6 +1797,8 @@ async function showBottomSheet(aircraft) {
 - ✅ Touch-optimized filter bar
 - ✅ List view with sorting
 - ✅ Color-coded markers (Green/Red/Yellow/Blue)
+- ✅ Geographic region filtering (Danmark, Nordeuropa, Europa, Nordatlanten, Global)
+- ✅ Heatmap visualization with multiple modes (density, altitude, type)
 - ✅ Geolocation support
 - ✅ Aircraft type detection from ADSB.lol and ADSB.fi
 - ✅ ES6 module migration for desktop version
@@ -1690,8 +1813,8 @@ async function showBottomSheet(aircraft) {
 
 ---
 
-**Document Version:** 2.0
-**Last Updated:** 2025-12-24
+**Document Version:** 2.1
+**Last Updated:** 2025-12-26
 **Maintained For:** Claude and other AI assistants
 
-**Note:** This documentation reflects the state of the repository as of December 2024, including both desktop and mobile versions with ES6 module architecture and aircraft type detection features.
+**Note:** This documentation reflects the state of the repository as of December 2025, including both desktop and mobile versions with ES6 module architecture, aircraft type detection, geographic region filtering, and heatmap visualization features.

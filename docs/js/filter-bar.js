@@ -43,6 +43,20 @@ export function initFilterBar(onFilterChange, onListViewToggle) {
     // Load saved filters from localStorage
     loadFilterState();
 
+    // Set initial active state for "Alle" button if needed
+    if (allAircraftBtn && filterState.showAllAircraft) {
+        allAircraftBtn.classList.add('active');
+        allAircraftBtn.setAttribute('aria-pressed', 'true');
+
+        // Pænere inline styles
+        allAircraftBtn.style.background = 'rgba(0, 212, 255, 0.2)';
+        allAircraftBtn.style.border = '2px solid #00d4ff';
+        allAircraftBtn.style.borderColor = '#00d4ff';
+        allAircraftBtn.style.color = '#00d4ff';
+        allAircraftBtn.style.boxShadow = '0 0 8px rgba(0, 212, 255, 0.5)';
+        allAircraftBtn.style.fontWeight = '600';
+    }
+
     console.log("✅ Filter bar initialiseret.");
 }
 
@@ -96,10 +110,23 @@ function toggleAllAircraftFilter(button) {
     if (filterState.showAllAircraft) {
         button.classList.add('active');
         button.setAttribute('aria-pressed', 'true');
+
+        // Pænere inline styles - samme som region buttons
+        button.style.background = 'rgba(0, 212, 255, 0.2)';
+        button.style.border = '2px solid #00d4ff';
+        button.style.borderColor = '#00d4ff';
+        button.style.color = '#00d4ff';
+        button.style.boxShadow = '0 0 8px rgba(0, 212, 255, 0.5)';
+        button.style.fontWeight = '600';
+
         console.log("✈️ Viser ALLE fly (inkl. civile)");
     } else {
         button.classList.remove('active');
         button.setAttribute('aria-pressed', 'false');
+
+        // Clear inline styles
+        button.style.cssText = '';
+
         console.log("🪖 Viser kun militære fly");
     }
 
