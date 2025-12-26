@@ -247,6 +247,19 @@ async function fetchAircraftData() {
 
             const data = await response.json();
             aircraftList = data.ac || [];
+
+            // Debug: Check coordinates in raw API response
+            const withCoords = aircraftList.filter(a => a.lat && a.lon);
+            const withoutCoords = aircraftList.filter(a => !a.lat || !a.lon);
+            console.log(`📍 Militær API response: ${withCoords.length} fly MED koordinater, ${withoutCoords.length} UDEN koordinater`);
+            if (withCoords.length > 0) {
+                console.log(`📍 Eksempel fly med koordinater:`, withCoords.slice(0, 3).map(a => ({
+                    hex: a.hex,
+                    flight: a.flight,
+                    lat: a.lat,
+                    lon: a.lon
+                })));
+            }
         }
 
         // Performance safeguard: Limit to maxAircraft
@@ -357,6 +370,19 @@ function applyFilters() {
     });
 
     console.log(`📊 ${state.filteredAircraft.length} fly efter alle filtre`);
+
+    // Debug: Check how many have valid coordinates
+    const withCoords = state.filteredAircraft.filter(a => a.lat && a.lon);
+    const withoutCoords = state.filteredAircraft.filter(a => !a.lat || !a.lon);
+    console.log(`📍 ${withCoords.length} fly MED koordinater, ${withoutCoords.length} UDEN koordinater`);
+    if (withoutCoords.length > 0) {
+        console.warn(`⚠️ Fly uden koordinater:`, withoutCoords.map(a => ({
+            hex: a.hex,
+            flight: a.flight,
+            lat: a.lat,
+            lon: a.lon
+        })));
+    }
 
     // Update map
     updateMap(state.filteredAircraft);
