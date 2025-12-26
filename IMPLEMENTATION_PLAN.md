@@ -2,11 +2,15 @@
 
 ## Oversigt
 
-Denne plan dækker implementering af nye features til MilAir Watch med fokus på:
-1. **Fix af aircraft info** (KRITISK - løses først)
-2. **Region filtrering** (Danmark, Europa, osv.)
-3. **Vis alle fly** (inkl. civile)
-4. **Heatmap visualisering** (flytyper)
+Denne plan dækker implementering af features til MilAir Watch:
+
+**✅ IMPLEMENTERET (v2.0):**
+1. ✅ **Fix af aircraft info** - Dual API strategi (ADSB.lol + ADSB.fi)
+2. ✅ **Region filtrering** - 5 geografiske regioner med bounding boxes
+3. ✅ **Vis alle fly** - Inkl. civile fly via region-based API
+4. ✅ **Heatmap visualisering** - 3 modes (density, altitude, type)
+
+**⏳ NÆSTE:**
 5. **Historiske data integration** (adsblol/globe_history_2025)
 
 **Design Filosofi:**
@@ -18,44 +22,46 @@ Denne plan dækker implementering af nye features til MilAir Watch med fokus på
 
 ---
 
-## 📋 FASE 0: Debug & Fix Aircraft Info (KRITISK)
+## 📋 FASE 0: Debug & Fix Aircraft Info ✅ FÆRDIG
 
 ### Status
-✅ Debug logging tilføjet
-🔄 Afventer test resultater fra browser
+✅ **IMPLEMENTERET OG VERIFICERET**
 
-### Problem Beskrivelse
-Aircraft type information vises ikke for nogle fly. Mulige årsager:
-- `aircraft.hex` felt mangler i API response
-- CORS proxy problemer
-- API rate limiting
-- Cache problemer
+### Implementation
+- ✅ `aircraft-info.js` modul (299 linjer)
+- ✅ Dual API strategi: ADSB.lol primary, ADSB.fi fallback
+- ✅ 24-timers cache for at minimere API calls
+- ✅ Extensive logging til debugging
+- ✅ Fallback til basic info hvis API fejler
+- ✅ Integration i `mobile-ui.js` bottom sheet
+- ✅ Viser type, beskrivelse, eksterne links
 
-### Debug Strategi
-1. Åbn live site: https://joachimth.github.io/adsb-planes-mil/
-2. Åbn browser console (F12)
-3. Klik på et fly marker
-4. Observer console output:
-   - `🔍 Første aircraft objekt:` - Tjek om `hex` felt eksisterer
-   - `🔍 loadAircraftInfo kaldt:` - Tjek registration og hex værdier
-   - `🔍 getAircraftInfo: Søger efter aircraft...` - Tjek API kald
-   - `✅ Aircraft data fundet...` eller `⚠️ Ingen aircraft data fundet...`
-
-### Forventet Fix
-Baseret på API response struktur, vil vi sandsynligvis:
-- Opdatere field mapping hvis `hex` hedder noget andet
-- Tilføje fallback til alternative felter
-- Implementere bedre error handling
-
-### Estimat
-1-2 timer når vi ser debug output
+### Løsning
+- API struktur verificeret: `aircraft.hex` felt eksisterer
+- Lookup strategi: registration → hex (ADSB.lol) → hex (ADSB.fi)
+- Caching reducerer gentagne opslag
+- Graceful degradation hvis data ikke findes
 
 ---
 
-## 📋 FASE 1: Region Filtrering
+## 📋 FASE 1: Region Filtrering ✅ FÆRDIG
 
-### Mål
-Brugeren kan vælge et geografisk fokusområde og kun se fly i/omkring det område.
+### Status
+✅ **IMPLEMENTERET OG DEPLOYED**
+
+### Implementation
+- ✅ `js/regions.js` modul (190 linjer)
+- ✅ 5 geografiske regioner defineret:
+  - 🇩🇰 Danmark (zoom 6, bbox med 100km buffer)
+  - 🌍 Nordeuropa (default, zoom 4, 200km buffer)
+  - 🌍 Europa (zoom 4, 250km buffer)
+  - 🌊 Nordatlanten (zoom 3, 300km buffer)
+  - 🌐 Global (ingen geografisk filtrering)
+- ✅ Region selector i hamburger menu
+- ✅ Bounding box filtering med buffer zones
+- ✅ localStorage persistence
+- ✅ Auto-zoom til region ved ændring
+- ✅ Haversine distance calculation for præcis filtrering
 
 ### Features
 
@@ -183,24 +189,35 @@ Design skal følge eksisterende mobile-first dark radar theme. Se IMPLEMENTATION
 
 ---
 
-## 📋 FASE 2: Vis Alle Fly (Civilian Aircraft)
+## 📋 FASE 2: Vis Alle Fly (Civilian Aircraft) ✅ FÆRDIG
 
-### Mål
-Giv brugeren mulighed for at se ALLE fly inkl. civile, ikke kun militære.
+### Status
+✅ **IMPLEMENTERET OG DEPLOYED**
 
-### Problem
-Nuværende API endpoint (`/v2/mil`) returnerer kun militære fly. Vi skal bruge et nyt endpoint.
+### Implementation
+- ✅ "Alle Fly" toggle button i filter bar (`#filterAllAircraft`)
+- ✅ Dual API strategi implementeret i `main-mobile.js`:
+  - Militær-only: `https://api.adsb.lol/v2/mil`
+  - Alle fly: `https://api.adsb.lol/v2/lat/{lat}/lon/{lon}/dist/{distance}`
+- ✅ Grid-based fetching for store områder (>250 NM radius)
+  - Opdeler store regioner i 250 NM celler
+  - Henter data i parallel batches (max 5 concurrent)
+  - Deduplicering baseret på hex identifier
+- ✅ Performance safeguards:
+  - Max 500 fly display limit
+  - Deaktiveret på Global region (for mange fly)
+- ✅ Aircraft categorization opdateret:
+  - Emergency (rød)
+  - Military (grøn)
+  - Special (gul)
+  - Civilian (blå)
+- ✅ Filter logik: Civile fly kun vist når "Alle" er aktivt
 
-### Løsning
-
-#### 2.1 Dual API Strategy
-
-**API Endpoints:**
-- **Militær (nuværende):** `https://api.adsb.lol/v2/mil`
-- **Alle fly:** `https://api.adsb.lol/v2/all` eller brug region-baseret endpoint
-- **Region-baseret:** `https://api.adsb.lol/v2/point/{lat}/{lon}/{radius_nm}`
-
-**Anbefaling:** Brug region-baseret endpoint når "Alle fly" er aktiveret for at undgå at hente globalt dataset (kan være 10,000+ fly).
+### Tekniske Detaljer
+- `calculateRadiusFromBbox()`: Beregner radius fra bounding box
+- `generateGridPoints()`: Opdeler store områder i grid
+- `fetchFromPoint()`: Henter data fra enkelt punkt
+- Batch processing med Promise.allSettled for resiliens
 
 #### 2.2 UI Design
 
@@ -341,27 +358,32 @@ Se IMPLEMENTATION_PLAN.md FASE 2 for API detaljer.
 
 ---
 
-## 📋 FASE 3: Heatmap Visualisering
+## 📋 FASE 3: Heatmap Visualisering ✅ FÆRDIG
 
-### Mål
-Vise heatmap overlay på kortet der visualiserer flytyper og tæthed.
+### Status
+✅ **IMPLEMENTERET OG DEPLOYED**
 
-### Features
+### Implementation
+- ✅ `js/heatmap.js` modul (280 linjer)
+- ✅ Leaflet.heat plugin integration
+- ✅ 3 visualiserings modes:
+  - **Density**: Flykoncentration (gul → orange → rød gradient)
+  - **Altitude**: Flyvehøjde (blå → cyan → gul → rød gradient)
+  - **Type**: Kategori-baseret (grøn/rød/gul/blå per type)
+- ✅ Toggle switch i UI (`#toggleHeatmap`)
+- ✅ Mode selector buttons (density/altitude/type)
+- ✅ Dynamic legend display (`#heatmapLegend`)
+- ✅ Auto-scaling baseret på antal fly
+- ✅ Custom intensity og radius per mode
+- ✅ Pæn UI styling med active state highlighting
 
-#### 3.1 Heatmap Typer
-
-**1. Tæthedskort (Density Heatmap):**
-- Vis hvor mange fly der er i forskellige områder
-- Farve gradient: Blå (få) → Grøn → Gul → Rød (mange)
-
-**2. Flytype Heatmap:**
-- Vis dominerende flytype i område
-- Farve: Grøn (Militær) / Blå (Civil) / Rød (Emergency)
-- Cluster size indikerer antal
-
-**3. Højde Heatmap:**
-- Vis gennemsnitlig flyvehøjde i områder
-- Farve gradient: Lilla (lav) → Blå → Cyan → Grøn → Gul → Rød (høj)
+### Tekniske Detaljer
+- `initHeatmap()`: Initialiserer heatmap lag og controls
+- `updateHeatmap()`: Opdaterer heatmap baseret på mode
+- `generateDensityHeatmap()`: Tæthedsvisualisering
+- `generateAltitudeHeatmap()`: Højdevisualisering (normaliseret 0-50000 ft)
+- `generateTypeHeatmap()`: Type-baseret visualisering
+- `clearHeatmap()`: Fjerner heatmap lag fra kort
 
 #### 3.2 UI Design
 
