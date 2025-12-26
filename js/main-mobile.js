@@ -500,8 +500,8 @@ function onRegionChange(newRegion) {
         setMapRegion(region);
     }
 
-    // Re-apply filters with new region
-    applyFilters();
+    // Fetch new data for the region
+    fetchAircraftData();
 }
 
 /**
