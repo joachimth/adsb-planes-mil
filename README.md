@@ -1,58 +1,83 @@
-# Militær Fly Tracker
+# MilAir Watch - Live Militær Fly Radar
 
-> Et interaktivt realtids-kort til at spore militære og andre specialflyvninger via åbne ADS-B data.
+> Real-time tracking af militære fly og nødsituationer via åbne ADS-B data.
 
-Projektet viser live-positioner for fly, der udsender specifikke militære eller nød-relaterede squawk-koder. Data hentes fra [ADSB.lol API'en](https://www.adsb.lol/api/) og opdateres automatisk.
+**Live site:** https://joachimth.github.io/adsb-planes-mil/
 
-## Hovedfunktioner
+---
 
-*   🗺️ **Interaktivt Realtids-kort:** Se flyenes positioner på et Leaflet-kort, der opdateres hvert 30. sekund.
-*   📊 **Dynamisk Flytabel:** En tabel med detaljer om alle synlige fly, som opdateres synkront med kortet.
-*   🔍 **Dobbelt Filtrering:**
-    *   **Kaldesignal:** Søg og filtrer dynamisk på flyets kaldesignal.
-    *   **Squawk-koder:** Vælg og fravælg kategorier af squawk-koder for at tilpasse, hvilke flytyper du vil se.
-*   🚨 **Automatisk Nød-detektering:** Siden identificerer automatisk fly, der udsender nød-squawks (`7500`, `7600`, `7700`), fremhæver dem med et rødt ikon, viser en tydelig advarselsboks og zoomer automatisk ind på dem på kortet.
-*   ⚙️ **Modulært Design:** Projektet er bygget med en ren og vedligeholdelsesvenlig kodestruktur, hvor HTML, CSS og JavaScript er fuldstændigt adskilt.
+## Hvad det er
 
-## Teknisk Overblik
+MilAir Watch viser live-positioner for militære fly og fly med nød-squawk-koder på et interaktivt radar-kort. Data hentes fra [ADSB.lol API'en](https://www.adsb.lol/api/) og opdateres hvert 30. sekund.
 
-*   **Frontend:** HTML5, CSS3, Vanilla JavaScript (ES6+)
-*   **Kort-bibliotek:** [Leaflet.js](https://leafletjs.com/)
-*   **Styling:** [MVP.css](https://mvp.css.io/) for simpel, responsiv styling.
-*   **API:** [ADSB.lol](https://api.adsb.lol/v2/mil)
-*   **CORS Proxy:** [corsproxy.io](https://corsproxy.io/) for at muliggøre API-kald fra browseren.
+## Funktioner
 
-## Installation og Kørsel
+- **Live radar-kort** - Fly med farvekodede markører: grøn (militær), rød (nød), gul (special), blå (civil)
+- **Kategorifiltere** - Militær / Nød / Special / Alle fly
+- **Geografiske regioner** - Danmark, Nordeuropa, Europa, Nordatlanten, Global
+- **Listevisning** - Sorterbar liste over fly med detaljer
+- **Nød-detektering** - Automatisk alarm og zoom ved squawk 7500/7600/7700
+- **Heatmap** - Visualiser flyaktivitet (densitet, højde, type)
+- **Flydetaljer** - Bottom sheet med ICAO, squawk, højde, hastighed, og links til Flightradar24 / ADS-B Exchange
+- **PWA** - Kan installeres på iOS/Android hjemskærm
 
-Da dette projekt henter lokale filer (f.eks. `header.html`, `squawk_codes.json`) via `fetch()`, kan du ikke køre det ved blot at åbne `index.html` direkte i browseren (på grund af browserens sikkerhedsregler).
+## Teknisk stack
 
-Du skal køre det fra en **lokal webserver**. Den nemmeste måde at starte en på er:
+- Vanilla JavaScript ES6+ (ingen frameworks)
+- Leaflet.js 1.9.4 (kort)
+- ADSB.lol v2 API (militær endpoint + region-endpoint)
+- ADSB.fi API (backup flytype-opslag)
+- corsproxy.io (CORS proxy)
+- GitHub Pages (hosting, `docs/` mappe)
 
-1.  Åbn en terminal eller kommandoprompt i projektets mappe.
-2.  Kør denne kommando (kræver Python 3):
-    ```bash
-    python -m http.server
-    ```
-3.  Åbn din browser og gå til adressen `http://localhost:8000`.
+## Filstruktur
 
-## Sådan Bruger Du Siden
+```
+adsb-planes-mil/
+├── index-mobile.html          # Kilde-HTML (deployed → docs/index.html)
+├── style-mobile.css           # Kilde-CSS  (deployed → docs/style.css)
+├── js/                        # JavaScript moduler
+│   ├── main-mobile.js         # Hoved-controller
+│   ├── mobile-ui.js           # UI-komponenter (bottom sheet, menu)
+│   ├── filter-bar.js          # Filtreringslogik
+│   ├── list-view.js           # Listevisning
+│   ├── map_section_mobile.js  # Leaflet-kort med farvekodede markører
+│   ├── regions.js             # Geografiske regioner med bounding boxes
+│   ├── heatmap.js             # Heatmap-visualisering
+│   ├── aircraft-info.js       # Flytype-opslag (ADSB.lol + ADSB.fi)
+│   └── squawk-lookup.js       # Squawk-kode database
+├── squawk_codes.json          # Squawk-kode database
+├── docs/                      # GitHub Pages deployment (auto-synkroniseret)
+├── deploy-to-docs.sh          # Manuel deployment-script
+└── .github/workflows/         # CI/CD (auto-deploy ved push til main)
+```
 
-1.  **Automatisk Opdatering:** Kortet og tabellen opdateres automatisk hvert 30. sekund.
-2.  **Filtrér på Kaldesignal:** Begynd at taste i "Filtrér efter kaldesignal"-feltet for at se en live-filtreret liste.
-3.  **Filtrér på Squawk:** Vælg eller fravælg de forskellige squawk-koder i tabellen for at vise eller skjule de tilsvarende fly. Nød-koderne er altid aktive.
-4.  **Nødsituationer:** Hvis et fly udsender en nød-squawk, vises en rød alarmboks øverst. Klik på krydset (`×`) for at skjule den.
+## Lokal udvikling
 
-## Fejlfinding
+```bash
+# Klon repo
+git clone https://github.com/joachimth/adsb-planes-mil.git
+cd adsb-planes-mil
 
-*   **Siden viser ingen fly?**
-    *   Prøv at genindlæse siden (hard refresh: `Ctrl+Shift+R` eller `Cmd+Shift+R`).
-    *   API'et fra ADSB.lol kan midlertidigt være nede.
-    *   Tjek, at du kører siden fra en lokal webserver som beskrevet ovenfor.
+# Start lokal server (JavaScript ES6 moduler kræver HTTP server)
+python -m http.server 8000
+# Åbn http://localhost:8000/index-mobile.html
+```
 
-## Bidrag
+## Deployment
 
-Har du forslag til forbedringer, eller har du fundet en fejl? Du er meget velkommen til at oprette en "Issue" her på GitHub!
+GitHub Actions deployer automatisk `docs/` til GitHub Pages ved hvert push til `main`.
+
+Hvis du har ændret kildefilerne og vil synkronisere `docs/` manuelt:
+
+```bash
+./deploy-to-docs.sh
+git add docs/ && git commit -m "chore: sync docs/"
+git push
+```
+
+> **Note:** GitHub Pages skal være konfigureret til at bruge `docs/`-mappen under Settings → Pages.
 
 ## Licens
 
-Dette projekt er udgivet under **MIT-licensen**. Se `LICENSE`-filen for flere detaljer. Du er fri til at bruge, ændre og distribuere koden.
+MIT - Copyright 2025 Joachim Thirsbro

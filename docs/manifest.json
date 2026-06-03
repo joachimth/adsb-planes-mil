@@ -1,0 +1,41 @@
+{
+  "name": "MilAir Watch - Live Militær Fly Radar",
+  "short_name": "MilAir Watch",
+  "description": "Real-time tracking af militære fly og nødsituationer via åbne ADS-B data.",
+  "start_url": "/adsb-planes-mil/",
+  "scope": "/adsb-planes-mil/",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a",
+  "orientation": "portrait-primary",
+  "lang": "da",
+  "categories": ["navigation", "utilities"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Radar",
+      "short_name": "Radar",
+      "url": "/adsb-planes-mil/",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

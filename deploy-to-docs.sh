@@ -2,23 +2,31 @@
 
 # Deploy MilAir Watch Mobile to docs/ folder for GitHub Pages
 # Usage: ./deploy-to-docs.sh
+#
+# NOTE: index-mobile.html and docs/index.html are kept in sync.
+# The ONLY difference is the CSS filename reference:
+#   index-mobile.html  → style-mobile.css  (source/dev)
+#   docs/index.html    → style.css         (deployed)
+# Run this script after editing source files to sync to docs/.
+
+set -e
 
 echo "🚀 Deploying MilAir Watch Mobile to docs/ folder..."
 
-# Create docs directory
+# Create docs directory structure
 echo "📁 Creating docs/ directory..."
 mkdir -p docs/js
 
-# Copy HTML (rename to index.html)
-echo "📄 Copying HTML..."
-cp index-mobile.html docs/index.html
+# Sync HTML (replace CSS ref for deployment)
+echo "📄 Syncing HTML..."
+sed 's/href="style-mobile.css"/href="style.css"/' index-mobile.html > docs/index.html
 
-# Copy CSS (rename to style.css)
-echo "🎨 Copying CSS..."
+# Sync CSS
+echo "🎨 Syncing CSS..."
 cp style-mobile.css docs/style.css
 
-# Copy JavaScript files
-echo "📜 Copying JavaScript..."
+# Sync JavaScript modules
+echo "📜 Syncing JavaScript..."
 cp js/main-mobile.js docs/js/
 cp js/mobile-ui.js docs/js/
 cp js/filter-bar.js docs/js/
@@ -29,82 +37,37 @@ cp js/heatmap.js docs/js/
 cp js/aircraft-info.js docs/js/
 cp js/squawk-lookup.js docs/js/
 
-# Copy data files
-echo "📊 Copying data files..."
+# Also copy desktop JS (kept for reference, not loaded by mobile)
+cp js/main.js docs/js/
+cp js/map_section.js docs/js/
+cp js/flight_table.js docs/js/
+cp js/callsign_filter.js docs/js/
+cp js/squawk_filter.js docs/js/
+cp js/emergency_alert.js docs/js/
+
+# Sync data files
+echo "📊 Syncing data files..."
 cp squawk_codes.json docs/
 
-# Copy assets
-echo "🎨 Copying assets..."
+# Sync assets
+echo "🎨 Syncing assets..."
 cp favicon.svg docs/
+[ -f icon-192.png ] && cp icon-192.png docs/ || echo "⚠️  icon-192.png not found (run: python3 scripts/gen-icons.py)"
+[ -f icon-512.png ] && cp icon-512.png docs/ || echo "⚠️  icon-512.png not found (run: python3 scripts/gen-icons.py)"
+[ -f manifest.json ] && cp manifest.json docs/ || echo "⚠️  manifest.json not found in root (using docs/ version)"
 
-# Update script reference in docs/index.html
-echo "🔧 Updating script reference..."
-sed -i 's/style-mobile.css/style.css/g' docs/index.html
-
-# Create 404 redirect
-echo "🔀 Creating 404 redirect..."
-cat > docs/404.html << 'EOF'
-<!DOCTYPE html>
-<html lang="da">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0;url=/adsb-planes-mil/">
-    <title>Redirecting...</title>
-</head>
-<body>
-    <p>Redirecting to <a href="/adsb-planes-mil/">MilAir Watch</a>...</p>
-</body>
-</html>
-EOF
-
-# Create README for docs folder
-echo "📖 Creating docs/README.md..."
-cat > docs/README.md << 'EOF'
-# MilAir Watch - Deployment Folder
-
-This folder contains the production-ready files for GitHub Pages deployment.
-
-**Live Site:** https://joachimth.github.io/adsb-planes-mil/
-
-## Files
-
-- `index.html` - Main application (mobile-first)
-- `style.css` - Dark radar theme
-- `js/` - JavaScript modules
-
-## How to Deploy
-
-1. Push this folder to GitHub
-2. Enable GitHub Pages in repository settings
-3. Select `main` branch and `/docs` folder
-4. Wait 1-5 minutes for deployment
-
-## Updating
-
-Run `../deploy-to-docs.sh` from the root directory to update this folder.
-EOF
-
-# Create a simple .nojekyll file to prevent Jekyll processing
-echo "🚫 Creating .nojekyll..."
+# Ensure .nojekyll exists
 touch docs/.nojekyll
 
 echo ""
-echo "✅ Deployment preparation complete!"
+echo "✅ Deployment sync complete!"
 echo ""
-echo "📂 Files copied to docs/ folder:"
+echo "📂 docs/ contents:"
 ls -lh docs/
 echo ""
-echo "📂 JavaScript files:"
-ls -lh docs/js/
-echo ""
 echo "📋 Next steps:"
-echo "1. Review files in docs/ folder"
-echo "2. Test locally: python -m http.server 8000"
-echo "3. Commit changes: git add docs/ && git commit -m 'Deploy mobile UI'"
-echo "4. Push to GitHub: git push origin main"
-echo "5. Enable GitHub Pages in Settings → Pages → /docs folder"
+echo "1. Test locally: cd docs && python -m http.server 8000"
+echo "2. Commit: git add docs/ && git commit -m 'chore: sync docs/ for GitHub Pages'"
+echo "3. Push: git push origin main"
 echo ""
-echo "🌐 Your site will be live at:"
-echo "   https://joachimth.github.io/adsb-planes-mil/"
-echo ""
-echo "🎉 Happy deploying!"
+echo "🌐 Live at: https://joachimth.github.io/adsb-planes-mil/"
