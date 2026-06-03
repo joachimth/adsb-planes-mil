@@ -6,6 +6,18 @@
 console.log("✅ flight_table.js er indlæst.");
 
 /**
+ * Escaper HTML-tegn for at undgå XSS
+ * @param {string} str - Tekst at escape
+ * @returns {string} - Escapet tekst
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+/**
  * Opdaterer fly-tabellen med filtreret data
  * @param {Array} flightData - Liste af fly-objekter
  */
@@ -31,17 +43,17 @@ export function updateFlightTable(flightData) {
 
     // Generer tabel-rækker
     const rowsHTML = flightData.map(flight => {
-        const icao = flight.r || 'N/A';
-        const callsign = flight.flight?.trim() || 'N/A';
-        const type = flight.aircraftType || '...';
-        const squawk = flight.squawk || '----';
+        const icao = escapeHtml(flight.r || 'N/A');
+        const callsign = escapeHtml(flight.flight?.trim() || 'N/A');
+        const type = escapeHtml(flight.aircraftType || '...');
+        const squawk = escapeHtml(flight.squawk || '----');
         const altitude = flight.alt_baro === 'ground'
             ? 'På jorden'
-            : (flight.alt_baro || 'N/A');
+            : escapeHtml(flight.alt_baro || 'N/A');
         const speed = flight.gs
             ? flight.gs.toFixed(0)
             : 'N/A';
-        const country = flight.cou || 'Ukendt';
+        const country = escapeHtml(flight.cou || 'Ukendt');
 
         // Tilføj emergency class hvis det er et nød-fly
         const emergencyClass = ['7500', '7600', '7700'].includes(squawk)
