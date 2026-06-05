@@ -70,7 +70,9 @@ async function loadAllHtmlSections() {
 
     const loadPromises = sections.map(async section => {
         try {
-            const response = await fetch(section.url);
+            const response = await fetch(section.url, {
+                signal: AbortSignal.timeout(5000) // 5 second timeout for HTML sections
+            });
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${section.url}`);
             }
@@ -117,7 +119,8 @@ async function fetchFlightData() {
 
     try {
         const response = await fetch(apiUrl, {
-            signal: state.abortController.signal
+            signal: AbortSignal.timeout(10000), // 10 second timeout
+            headers: { 'Accept': 'application/json' }
         });
 
         if (!response.ok) {
@@ -208,9 +211,13 @@ async function enrichFlightDataWithAircraftType() {
 
 /**
  * Tjekker om en squawk matcher de valgte filtre (inkl. ranges)
+ * Validerer at squawk er en valid 4-cifret kode
  */
 function checkSquawkMatch(flightSquawk, selectedSquawks) {
-    if (!flightSquawk) return false;
+      // Valider at squawk er 4 cifre
+      if (!flightSquawk || !/^\d{4}$/.test(String(flightSquawk))) {
+          return false;
+      }
 
     // Direkte match (mest almindeligt)
     if (selectedSquawks.has(flightSquawk)) {
