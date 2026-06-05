@@ -500,7 +500,6 @@ async function loadAircraftInfo(aircraft) {
         document.getElementById('aircraftInfoSection').style.display = 'block';
 
         // Hent Planespotters billede asynkront - blokerer ikke type-visning
-        const hex = aircraft.hex || null;
         if (hex) {
             getAircraftPhoto(hex, registration || '', aircraft.t || '').then(photo => {
                 // Tjek at brugeren stadig ser dette fly
