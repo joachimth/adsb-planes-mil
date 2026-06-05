@@ -310,61 +310,60 @@ export function clearAircraftCache() {
     console.log("✅ Aircraft cache ryddet");
 }
 
-// Photo cache (deles med aircraft cache duration)
+// Photo cache
 const photoCache = new Map();
 
 /**
- * Hent første flyfoto fra JetPhotos.com via registrering.
- * Bruger corsproxy.io (samme proxy som resten af appen) + DOMParser.
- * @param {string} registration - Flyregistrering (f.eks. "MM82010")
- * @returns {Promise<{thumbnailUrl: string, fullUrl: string}|null>}
+ * Hent første flyfoto fra Planespotters.net API.
+ * Bruger ICAO hex-kode (fra ADS-B data) - returnerer JSON direkte.
+ * @param {string} hex   - ICAO 24-bit hex adresse (f.eks. "48D916")
+ * @param {string} reg   - Registrering (f.eks. "OY-KKS") - valgfri, forbedrer træf
+ * @param {string} type  - ICAO flytype (f.eks. "B738") - valgfri
+ * @returns {Promise<{thumbnailUrl: string, largeUrl: string}|null>}
  */
-export async function getAircraftPhoto(registration) {
-    if (!registration || registration === 'N/A') return null;
+export async function getAircraftPhoto(hex, reg = '', type = '') {
+    if (!hex) return null;
 
-    const cached = photoCache.get(registration);
+    const cacheKey = hex;
+    const cached = photoCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
         return cached.data;
     }
 
     try {
-        const jetphotosUrl = `https://www.jetphotos.com/showphotos.php` +
-            `?keywords=${encodeURIComponent(registration)}` +
-            `&keywords-type=registration&keywords-contain=0&page=1&sort-order=1`;
-        const proxyUrl = `${API_CONFIG.proxyUrl}${encodeURIComponent(jetphotosUrl)}`;
+        const params = new URLSearchParams();
+        if (reg)  params.set('reg', reg);
+        if (type) params.set('icaoType', type);
 
-        const response = await fetch(proxyUrl, {
-            signal: AbortSignal.timeout(8000)
+        const url = `https://api.planespotters.net/pub/photos/hex/${hex}?${params}`;
+        const response = await fetch(url, {
+            signal: AbortSignal.timeout(8000),
+            headers: { 'Accept': 'application/json' }
         });
 
         if (!response.ok) {
-            photoCache.set(registration, { data: null, timestamp: Date.now() });
+            photoCache.set(cacheKey, { data: null, timestamp: Date.now() });
             return null;
         }
 
-        const html = await response.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const img = doc.querySelector('img.result__photo');
-
-        if (!img) {
-            photoCache.set(registration, { data: null, timestamp: Date.now() });
+        const json = await response.json();
+        const first = json?.photos?.[0];
+        if (!first) {
+            photoCache.set(cacheKey, { data: null, timestamp: Date.now() });
             return null;
         }
-
-        let src = img.getAttribute('src') || '';
-        if (src.startsWith('//')) src = 'https:' + src;
 
         const photo = {
-            thumbnailUrl: src,
-            fullUrl: src.replace('/400/', '/full/')
+            thumbnailUrl: first.thumbnail_large?.src || first.thumbnail?.src,
+            largeUrl: first.link || null
         };
 
-        photoCache.set(registration, { data: photo, timestamp: Date.now() });
-        console.log(`📸 JetPhotos foto fundet for ${registration}:`, photo.thumbnailUrl);
+        photoCache.set(cacheKey, { data: photo, timestamp: Date.now() });
+        console.log(`📸 Planespotters foto fundet for ${hex}:`, photo.thumbnailUrl);
         return photo;
 
     } catch (e) {
-        console.warn(`⚠️ JetPhotos foto fejl for ${registration}:`, e.message);
+        console.warn(`⚠️ Planespotters foto fejl for ${hex}:`, e.message);
         return null;
     }
 }

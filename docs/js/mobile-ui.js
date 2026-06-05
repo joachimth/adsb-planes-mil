@@ -499,11 +499,12 @@ async function loadAircraftInfo(aircraft) {
         // Show info section
         document.getElementById('aircraftInfoSection').style.display = 'block';
 
-        // Hent JetPhotos billede asynkront - blokerer ikke type-visning
-        if (registration && registration !== 'N/A') {
-            getAircraftPhoto(registration).then(photo => {
+        // Hent Planespotters billede asynkront - blokerer ikke type-visning
+        const hex = aircraft.hex || null;
+        if (hex) {
+            getAircraftPhoto(hex, registration || '', aircraft.t || '').then(photo => {
                 // Tjek at brugeren stadig ser dette fly
-                if (uiState.selectedAircraft?.r !== registration) return;
+                if (uiState.selectedAircraft?.hex !== hex) return;
                 if (!photo) return;
 
                 const photoContainer = document.getElementById('aircraftPhotoContainer');
