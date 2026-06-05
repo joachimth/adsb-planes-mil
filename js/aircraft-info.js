@@ -309,3 +309,62 @@ export function clearAircraftCache() {
     aircraftCache.clear();
     console.log("✅ Aircraft cache ryddet");
 }
+
+// Photo cache (deles med aircraft cache duration)
+const photoCache = new Map();
+
+/**
+ * Hent første flyfoto fra JetPhotos.com via registrering.
+ * Bruger corsproxy.io (samme proxy som resten af appen) + DOMParser.
+ * @param {string} registration - Flyregistrering (f.eks. "MM82010")
+ * @returns {Promise<{thumbnailUrl: string, fullUrl: string}|null>}
+ */
+export async function getAircraftPhoto(registration) {
+    if (!registration || registration === 'N/A') return null;
+
+    const cached = photoCache.get(registration);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        return cached.data;
+    }
+
+    try {
+        const jetphotosUrl = `https://www.jetphotos.com/showphotos.php` +
+            `?keywords=${encodeURIComponent(registration)}` +
+            `&keywords-type=registration&keywords-contain=0&page=1&sort-order=1`;
+        const proxyUrl = `${API_CONFIG.proxyUrl}${encodeURIComponent(jetphotosUrl)}`;
+
+        const response = await fetch(proxyUrl, {
+            signal: AbortSignal.timeout(8000)
+        });
+
+        if (!response.ok) {
+            photoCache.set(registration, { data: null, timestamp: Date.now() });
+            return null;
+        }
+
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const img = doc.querySelector('img.result__photo');
+
+        if (!img) {
+            photoCache.set(registration, { data: null, timestamp: Date.now() });
+            return null;
+        }
+
+        let src = img.getAttribute('src') || '';
+        if (src.startsWith('//')) src = 'https:' + src;
+
+        const photo = {
+            thumbnailUrl: src,
+            fullUrl: src.replace('/400/', '/full/')
+        };
+
+        photoCache.set(registration, { data: photo, timestamp: Date.now() });
+        console.log(`📸 JetPhotos foto fundet for ${registration}:`, photo.thumbnailUrl);
+        return photo;
+
+    } catch (e) {
+        console.warn(`⚠️ JetPhotos foto fejl for ${registration}:`, e.message);
+        return null;
+    }
+}

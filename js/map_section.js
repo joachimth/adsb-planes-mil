@@ -5,6 +5,18 @@
 
 console.log("✅ map_section.js er indlæst.");
 
+/**
+ * Escaper HTML-tegn for at undgå XSS
+ * @param {string} str - Tekst at escape
+ * @returns {string} - Escapet tekst
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // Kort-tilstand
 let myMap;
 let flightMarkersLayer;
@@ -111,11 +123,11 @@ export function updateMap(flightData) {
 
         const popupContent = `
             <div class="flight-popup">
-                <strong>Kaldesignal:</strong> ${flight.flight?.trim() || 'N/A'}<br>
+                <strong>Kaldesignal:</strong> ${escapeHtml(flight.flight?.trim() || 'N/A')}<br>
                 <strong>Højde:</strong> ${altitude}<br>
                 <strong>Fart:</strong> ${speed}<br>
-                <strong>Squawk:</strong> ${flight.squawk || '----'}<br>
-                ${flight.cou ? `<strong>Land:</strong> ${flight.cou}` : ''}
+                <strong>Squawk:</strong> ${escapeHtml(flight.squawk || '----')}<br>
+                ${flight.cou ? `<strong>Land:</strong> ${escapeHtml(flight.cou)}` : ''}
             </div>
         `;
 

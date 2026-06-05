@@ -6,7 +6,7 @@
 console.log("✅ mobile-ui.js er indlæst.");
 
 import { getSquawkDescription, getSquawkInfo } from './squawk-lookup.js';
-import { getAircraftInfo, getAircraftTypeIcon, getAircraftCategory } from './aircraft-info.js';
+import { getAircraftInfo, getAircraftTypeIcon, getAircraftCategory, getAircraftPhoto } from './aircraft-info.js';
 
 // State
 const uiState = {
@@ -498,6 +498,32 @@ async function loadAircraftInfo(aircraft) {
 
         // Show info section
         document.getElementById('aircraftInfoSection').style.display = 'block';
+
+        // Hent JetPhotos billede asynkront - blokerer ikke type-visning
+        if (registration && registration !== 'N/A') {
+            getAircraftPhoto(registration).then(photo => {
+                // Tjek at brugeren stadig ser dette fly
+                if (uiState.selectedAircraft?.r !== registration) return;
+                if (!photo) return;
+
+                const photoContainer = document.getElementById('aircraftPhotoContainer');
+                const photoImg = document.getElementById('aircraftPhoto');
+                const photoLoader = document.getElementById('photoLoader');
+                if (!photoContainer || !photoImg || !photoLoader) return;
+
+                photoImg.src = photo.thumbnailUrl;
+                photoImg.alt = registration;
+                photoImg.style.display = 'none';
+                photoLoader.style.display = 'flex';
+                photoContainer.style.display = 'block';
+
+                photoImg.onerror = () => { photoContainer.style.display = 'none'; };
+                photoImg.onload = () => {
+                    photoImg.style.display = 'block';
+                    photoLoader.style.display = 'none';
+                };
+            }).catch(() => {});
+        }
 
     } catch (error) {
         console.warn('⚠️ Kunne ikke hente flyinformation:', error);

@@ -11,12 +11,14 @@ console.log("✅ squawk_filter.js er indlæst.");
  * @param {Set} userSelectedSquawks - Reference til det globale squawk-sæt
  */
 export async function initializeSquawkFilter(onFilterChange, userSelectedSquawks) {
-    try {
-        const response = await fetch('squawk_codes.json');
+      try {
+          const response = await fetch('squawk_codes.json', {
+              signal: AbortSignal.timeout(5000) // 5 second timeout
+          });
 
-        if (!response.ok) {
-            throw new Error(`HTTP fejl! Status: ${response.status}`);
-        }
+          if (!response.ok) {
+              throw new Error(`HTTP fejl! Status: ${response.status}`);
+          }
 
         const squawkData = await response.json();
 
