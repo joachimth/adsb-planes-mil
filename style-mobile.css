@@ -67,6 +67,11 @@
     /* Touch Targets */
     --touch-min: 44px;
     --touch-optimal: 56px;
+
+    /* Top bar height (content area, excludes safe-area padding) */
+    --top-bar-height: 56px;
+    /* Total top bar height including safe area - use for positioning below */
+    --top-bar-total: calc(var(--top-bar-height) + env(safe-area-inset-top));
 }
 
 /* ========================================
@@ -130,8 +135,9 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 56px;
-    /* Add safe area for iPhone notch */
+    /* Total height includes safe area for Dynamic Island / notch */
+    height: var(--top-bar-total);
+    /* Content sits below safe area */
     padding-top: env(safe-area-inset-top);
     background: var(--radar-surface);
     border-bottom: 1px solid var(--border-subtle);
@@ -212,7 +218,7 @@ body {
 .map-container {
     position: absolute;
     /* Account for top bar + safe area */
-    top: calc(56px + env(safe-area-inset-top));
+    top: var(--top-bar-total);
     left: 0;
     right: 0;
     /* Account for filter bar + safe area */
@@ -991,7 +997,7 @@ button.heatmap-mode-btn.active,
 .list-view {
     position: fixed;
     /* Account for top bar + safe area */
-    top: calc(56px + env(safe-area-inset-top));
+    top: var(--top-bar-total);
     left: 0;
     right: 0;
     bottom: 0;
@@ -1134,7 +1140,7 @@ button.heatmap-mode-btn.active,
 .emergency-alert {
     position: fixed;
     /* Position below top bar + safe area */
-    top: calc(64px + env(safe-area-inset-top));
+    top: var(--top-bar-total);
     left: max(var(--space-md), env(safe-area-inset-left));
     right: max(var(--space-md), env(safe-area-inset-right));
     background: var(--status-emergency);
@@ -1200,7 +1206,7 @@ button.heatmap-mode-btn.active,
 .status-indicator {
     position: fixed;
     /* Position below top bar + safe area */
-    top: calc(64px + env(safe-area-inset-top));
+    top: var(--top-bar-total);
     right: max(var(--space-md), env(safe-area-inset-right));
     padding: var(--space-sm) var(--space-md);
     background: var(--radar-surface);
@@ -1258,8 +1264,11 @@ button.heatmap-mode-btn.active,
    RESPONSIVE - TABLET & DESKTOP
    ======================================== */
 @media screen and (min-width: 768px) {
+    :root {
+        --top-bar-height: 64px;
+    }
+
     .top-bar {
-        height: 64px;
         padding: 0 var(--space-lg);
     }
 
@@ -1268,7 +1277,7 @@ button.heatmap-mode-btn.active,
     }
 
     .map-container {
-        top: 64px;
+        top: var(--top-bar-total);
     }
 
     .filter-bar {
@@ -1305,7 +1314,7 @@ button.heatmap-mode-btn.active,
     }
 
     .list-view {
-        top: 64px;
+        top: var(--top-bar-total);
         max-width: 800px;
         margin: 0 auto;
     }
