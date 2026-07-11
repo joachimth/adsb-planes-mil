@@ -19,7 +19,7 @@ mkdir -p docs/js
 
 # Sync HTML (replace CSS ref for deployment)
 echo "📄 Syncing HTML..."
-sed 's/href="style-mobile.css"/href="style.css"/' index-mobile.html > docs/index.html
+sed 's/href="style-mobile.css[^"]*"/href="style.css"/' index-mobile.html > docs/index.html
 
 # Sync CSS
 echo "🎨 Syncing CSS..."
