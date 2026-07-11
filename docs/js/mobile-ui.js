@@ -612,6 +612,10 @@ export function showEmergencyAlert(aircraft) {
 
     text.textContent = `${callsign} udsender ${squawk}${squawkDesc}`;
 
+    // Add role/aria only when there is a real emergency
+    alert.setAttribute('role', 'alert');
+    alert.setAttribute('aria-live', 'assertive');
+    alert.setAttribute('aria-hidden', 'false');
     alert.classList.add('visible');
 
     // Auto-hide after 10 seconds
@@ -625,7 +629,11 @@ export function showEmergencyAlert(aircraft) {
 
 export function hideEmergencyAlert() {
     const alert = document.getElementById('emergencyAlert');
-    alert?.classList.remove('visible');
+    if (!alert) return;
+    alert.classList.remove('visible');
+    alert.removeAttribute('role');
+    alert.removeAttribute('aria-live');
+    alert.setAttribute('aria-hidden', 'true');
 }
 
 /* ========================================

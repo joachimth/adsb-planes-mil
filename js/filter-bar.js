@@ -186,13 +186,24 @@ export function updateFilterCounts(counts) {
         militaryBadge.style.display = 'none';
     }
 
-    // Emergency count
+    // Emergency count + button visual state
     const emergencyBadge = document.getElementById('emergencyCount');
+    const emergencyBtn = document.getElementById('filterEmergency');
     if (emergencyBadge && counts.emergency > 0) {
         emergencyBadge.textContent = counts.emergency;
         emergencyBadge.style.display = 'block';
     } else if (emergencyBadge) {
         emergencyBadge.style.display = 'none';
+    }
+    // Only show red active state when there are actual emergency aircraft
+    if (emergencyBtn) {
+        if (counts.emergency > 0) {
+            emergencyBtn.classList.add('active');
+            emergencyBtn.setAttribute('aria-pressed', 'true');
+        } else {
+            emergencyBtn.classList.remove('active');
+            emergencyBtn.setAttribute('aria-pressed', 'false');
+        }
     }
 
     // Special count

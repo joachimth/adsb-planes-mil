@@ -67,15 +67,17 @@ export function checkAndDisplayEmergencyAlert(flightData) {
         // Opdater alarm-tekst
         alertMessage.textContent = `🚨 ${description} ${callsign} - Squawk: ${squawk}`;
 
-        // Vis alarm
-        alertBox.classList.add('visible');
-
-        // Tilføj ARIA live region for screen readers
+        // Vis alarm - add role/aria dynamically only for real emergencies
         alertBox.setAttribute('role', 'alert');
         alertBox.setAttribute('aria-live', 'assertive');
+        alertBox.setAttribute('aria-hidden', 'false');
+        alertBox.classList.add('visible');
 
     } else {
-        // Ingen nød-fly - skjul alarm
+        // Ingen nød-fly - skjul alarm og fjern role/aria
         alertBox.classList.remove('visible');
+        alertBox.removeAttribute('role');
+        alertBox.removeAttribute('aria-live');
+        alertBox.setAttribute('aria-hidden', 'true');
     }
 }

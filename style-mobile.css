@@ -328,6 +328,12 @@ body {
     border-color: currentColor;
 }
 
+/* List view button - smaller than filter buttons */
+.filter-btn.list-view {
+    flex: 0 0 auto;
+    min-width: 52px;
+}
+
 .filter-btn.military.active {
     color: var(--status-military);
     background: rgba(0, 255, 136, 0.1);

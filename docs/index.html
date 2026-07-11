@@ -103,8 +103,8 @@
                 <span class="filter-btn-label">Militær</span>
                 <span class="filter-badge" id="militaryCount">0</span>
             </button>
-            <button class="filter-btn emergency active" id="filterEmergency"
-                    aria-pressed="true" aria-label="Vis nødsituationer">
+            <button class="filter-btn emergency" id="filterEmergency"
+                    aria-pressed="false" aria-label="Vis nødsituationer">
                 <span class="filter-btn-icon">🚨</span>
                 <span class="filter-btn-label">Nød</span>
                 <span class="filter-badge" id="emergencyCount" style="display: none;">0</span>
@@ -128,8 +128,8 @@
             </button>
         </nav>
 
-        <!-- Emergency Alert -->
-        <div class="emergency-alert" id="emergencyAlert" role="alert" aria-live="assertive">
+        <!-- Emergency Alert (hidden by default, role added dynamically by JS) -->
+        <div class="emergency-alert" id="emergencyAlert" aria-hidden="true">
             <div class="emergency-alert-icon">🚨</div>
             <div class="emergency-alert-content">
                 <h3 class="emergency-alert-title">NØDSITUATION DETEKTERET</h3>
