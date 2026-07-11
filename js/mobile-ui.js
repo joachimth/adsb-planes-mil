@@ -185,36 +185,81 @@ function initBottomSheet() {
         closeBottomSheet();
     });
 
-    // Swipe to close
+    // Swipe to close — listen on BOTH the handle and the aircraft header
+    // (first ~60px of content) so users have a larger swipe target.
+    const aircraftHeader = bottomSheet.querySelector('.aircraft-header');
+    const dragTargets = [handle];
+    if (aircraftHeader) {
+        dragTargets.push(aircraftHeader);
+        // Visual hint that header is draggable
+        aircraftHeader.style.cursor = 'grab';
+    }
+
+    const SWIPE_THRESHOLD = 40; // px — lowered from 50 for easier closing
+
     let startY = 0;
     let currentY = 0;
     let isDragging = false;
+    let dragStartTransform = 0; // transform value at drag start (usually 0 when visible)
 
-    handle.addEventListener('touchstart', (e) => {
+    function onTouchStart(e) {
+        if (!uiState.bottomSheetVisible) return;
         startY = e.touches[0].clientY;
+        currentY = startY;
         isDragging = true;
-    }, { passive: true });
+        // Disable transition during drag so sheet follows finger 1:1
+        bottomSheet.classList.add('dragging');
+        bottomSheet.classList.remove('snapping');
+    }
 
-    handle.addEventListener('touchmove', (e) => {
+    function onTouchMove(e) {
         if (!isDragging) return;
         currentY = e.touches[0].clientY;
         const diff = currentY - startY;
 
+        // Only allow dragging downward (positive diff)
         if (diff > 0) {
             bottomSheet.style.transform = `translateY(${diff}px)`;
+        } else {
+            // Resist upward drag — keep at 0
+            bottomSheet.style.transform = 'translateY(0)';
         }
-    }, { passive: true });
+    }
 
-    handle.addEventListener('touchend', () => {
+    function onTouchEnd() {
         if (!isDragging) return;
         isDragging = false;
 
         const diff = currentY - startY;
-        if (diff > 50) {
+
+        // Remove dragging class, add snapping for smooth transition
+        bottomSheet.classList.remove('dragging');
+        bottomSheet.classList.add('snapping');
+
+        if (diff > SWIPE_THRESHOLD) {
+            // Swipe was far enough — close the sheet
             closeBottomSheet();
+            // Clean up inline transform after close animation
+            setTimeout(() => {
+                bottomSheet.style.transform = '';
+                bottomSheet.classList.remove('snapping');
+            }, 300);
         } else {
+            // Not enough distance — snap back to open position
             bottomSheet.style.transform = '';
+            // Remove snapping class after transition completes
+            setTimeout(() => {
+                bottomSheet.classList.remove('snapping');
+            }, 300);
         }
+    }
+
+    // Attach listeners to all drag targets
+    dragTargets.forEach(target => {
+        target.addEventListener('touchstart', onTouchStart, { passive: true });
+        target.addEventListener('touchmove', onTouchMove, { passive: true });
+        target.addEventListener('touchend', onTouchEnd, { passive: true });
+        target.addEventListener('touchcancel', onTouchEnd, { passive: true });
     });
 
     // Close when tapping outside (on map or overlay)
@@ -269,6 +314,7 @@ export function openBottomSheet(aircraft) {
 
     // Show bottom sheet
     bottomSheet.classList.add('visible');
+    bottomSheet.classList.remove('dragging', 'snapping');
     bottomSheet.style.transform = '';
 }
 
@@ -280,6 +326,8 @@ export function closeBottomSheet() {
     uiState.selectedAircraft = null;
 
     bottomSheet.classList.remove('visible');
+    bottomSheet.classList.remove('dragging', 'snapping');
+    bottomSheet.style.transform = '';
 }
 
 /**

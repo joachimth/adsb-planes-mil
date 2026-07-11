@@ -405,15 +405,32 @@ body {
     transform: translateY(0);
 }
 
+/* During active drag: disable transition so sheet follows finger 1:1 */
+.bottom-sheet.dragging {
+    transition: none !important;
+}
+
+/* Smooth snap-back transition after a partial/failed swipe */
+.bottom-sheet.snapping {
+    transition: transform var(--transition-normal);
+}
+
 .bottom-sheet-handle {
     width: 100%;
-    padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
+    /* Min 44px touch target; symmetric padding so handle bar is truly centered */
+    min-height: var(--touch-min);
+    padding: 10px var(--space-md);
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: grab;
     position: relative;
     flex-shrink: 0;
+    /* Subtle separator from content below */
+    border-bottom: 1px solid var(--border-subtle);
+    /* Prevent text selection during drag */
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .bottom-sheet-handle:active {
@@ -422,9 +439,11 @@ body {
 
 .handle-bar {
     width: 40px;
-    height: 4px;
+    height: 5px;
     background: var(--text-muted);
-    border-radius: 2px;
+    border-radius: 3px;
+    /* Centered by parent flex (symmetric padding guarantees true center) */
+    flex-shrink: 0;
 }
 
 .sheet-close-btn {
@@ -432,24 +451,28 @@ body {
     right: var(--space-md);
     top: 50%;
     transform: translateY(-50%);
-    width: 36px;
-    height: 36px;
+    /* 32px circular button — clean, well-sized touch target */
+    width: 32px;
+    height: 32px;
     border: none;
     background: var(--radar-surface-elevated);
     color: var(--text-secondary);
     border-radius: 50%;
-    font-size: 22px;
+    font-size: 20px;
+    line-height: 1;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
     -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
 }
 
 .sheet-close-btn:active {
     background: var(--border-subtle);
     color: var(--text-primary);
+    transform: translateY(-50%) scale(0.92);
 }
 
 .bottom-sheet-content {
