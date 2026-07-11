@@ -21,6 +21,66 @@ MilAir Watch viser live-positioner for militære fly og fly med nød-squawk-kode
 - **Flydetaljer** - Bottom sheet med ICAO, squawk, højde, hastighed, og links til Flightradar24 / ADS-B Exchange
 - **PWA** - Kan installeres på iOS/Android hjemskærm
 
+## Screenshots
+
+Automatisk genereret via `scripts/render-screenshots.js` med Puppeteer headless browser. Screenshots viser appen med live flydata fra ADSB.lol API'et.
+
+### iPhone 17 Pro (402×874, 3x retina)
+
+<table>
+  <tr>
+    <td align="center"><b>Kortvisning</b></td>
+    <td align="center"><b>Bottom sheet — flydetaljer</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/iphone-17-pro.png" alt="iPhone 17 Pro — kortvisning" width="201"></td>
+    <td><img src="docs/screenshots/iphone-17-pro-bottom-sheet.png" alt="iPhone 17 Pro — bottom sheet" width="201"></td>
+  </tr>
+</table>
+
+### iPhone SE (375×667)
+
+<table>
+  <tr>
+    <td align="center"><b>Kortvisning</b></td>
+    <td align="center"><b>Bottom sheet — flydetaljer</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/iphone-se.png" alt="iPhone SE — kortvisning" width="187"></td>
+    <td><img src="docs/screenshots/iphone-se-bottom-sheet.png" alt="iPhone SE — bottom sheet" width="187"></td>
+  </tr>
+</table>
+
+### iPad (768×1024)
+
+<table>
+  <tr>
+    <td align="center"><b>Kortvisning</b></td>
+    <td align="center"><b>Bottom sheet — flydetaljer</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/ipad.png" alt="iPad — kortvisning" width="384"></td>
+    <td><img src="docs/screenshots/ipad-bottom-sheet.png" alt="iPad — bottom sheet" width="384"></td>
+  </tr>
+</table>
+
+### Desktop (1280×800)
+
+<table>
+  <tr>
+    <td align="center"><b>Kortvisning</b></td>
+    <td align="center"><b>Bottom sheet — flydetaljer</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/desktop.png" alt="Desktop — kortvisning" width="480"></td>
+    <td><img src="docs/screenshots/desktop-bottom-sheet.png" alt="Desktop — bottom sheet" width="480"></td>
+  </tr>
+</table>
+
+> Screenshots viser live militærfly med farvekodede markører, filter-bar, og bottom sheet med flydetaljer (kaldesignal, højde, hastighed, squawk, ICAO, foto, og links til Flightradar24 / ADS-B Exchange).
+
+---
+
 ## Teknisk stack
 
 - Vanilla JavaScript ES6+ (ingen frameworks)
@@ -48,6 +108,9 @@ adsb-planes-mil/
 │   └── squawk-lookup.js       # Squawk-kode database
 ├── squawk_codes.json          # Squawk-kode database
 ├── docs/                      # GitHub Pages deployment (auto-synkroniseret)
+│   └── screenshots/           # Automatisk genererede device screenshots
+├── scripts/
+│   └── render-screenshots.js  # Puppeteer screenshot rendering script
 ├── deploy-to-docs.sh          # Manuel deployment-script
 └── .github/workflows/         # CI/CD (auto-deploy ved push til main)
 ```
