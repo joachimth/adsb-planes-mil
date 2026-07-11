@@ -172,11 +172,18 @@ function initMenuItems() {
 function initBottomSheet() {
     const bottomSheet = document.getElementById('bottomSheet');
     const handle = document.getElementById('bottomSheetHandle');
+    const closeBtn = document.getElementById('sheetCloseBtn');
 
     if (!bottomSheet || !handle) {
         console.warn("⚠️ Bottom sheet-elementer ikke fundet.");
         return;
     }
+
+    // Close button
+    closeBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeBottomSheet();
+    });
 
     // Swipe to close
     let startY = 0;
@@ -203,7 +210,7 @@ function initBottomSheet() {
         isDragging = false;
 
         const diff = currentY - startY;
-        if (diff > 100) {
+        if (diff > 50) {
             closeBottomSheet();
         } else {
             bottomSheet.style.transform = '';

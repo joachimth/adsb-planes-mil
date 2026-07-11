@@ -394,7 +394,9 @@ body {
     z-index: var(--z-bottom-sheet);
     transform: translateY(100%);
     transition: transform var(--transition-normal);
-    max-height: 85vh;
+    /* Never go higher than top bar - prevents handle/close button being hidden behind Dynamic Island */
+    max-height: calc(100vh - var(--top-bar-total));
+    max-height: calc(100dvh - var(--top-bar-total));
     display: flex;
     flex-direction: column;
 }
@@ -405,10 +407,13 @@ body {
 
 .bottom-sheet-handle {
     width: 100%;
-    padding: var(--space-md) 0 var(--space-sm) 0;
+    padding: var(--space-sm) var(--space-md) var(--space-sm) 0;
     display: flex;
     justify-content: center;
+    align-items: center;
     cursor: grab;
+    position: relative;
+    flex-shrink: 0;
 }
 
 .bottom-sheet-handle:active {
@@ -420,6 +425,31 @@ body {
     height: 4px;
     background: var(--text-muted);
     border-radius: 2px;
+}
+
+.sheet-close-btn {
+    position: absolute;
+    right: var(--space-md);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--radar-surface-elevated);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.sheet-close-btn:active {
+    background: var(--border-subtle);
+    color: var(--text-primary);
 }
 
 .bottom-sheet-content {
