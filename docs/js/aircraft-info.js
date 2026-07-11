@@ -293,7 +293,10 @@ export function getAircraftCategory(type) {
 
     if (typeUpper.includes('H60') || typeUpper.includes('H-') ||
         typeUpper.includes('HELI') || typeUpper.includes('UH-') ||
-        typeUpper.includes('AH-') || typeUpper.includes('CH-')) {
+        typeUpper.includes('AH-') || typeUpper.includes('CH-') ||
+        // Airbus/Eurocopter EC-series + common ICAO heli type codes
+        /^EC\d/.test(typeUpper) || typeUpper.startsWith('EC1') ||
+        /^(H1|H2|EC3|EC4|AS3|AS5|B06|B47|R22|R44|R66|A109|A139|A169|A189|S76|S92|MD5|EC6)/.test(typeUpper)) {
         return 'Helikopter';
     }
 
@@ -320,7 +323,8 @@ export function getAircraftCategory(type) {
         return 'Bombefly';
     }
 
-    return 'Militærfly';
+    // Unknown type code — stay neutral rather than asserting "militærfly"
+    return 'Fly';
 }
 
 /**
