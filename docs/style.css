@@ -1152,12 +1152,20 @@ button.heatmap-mode-btn.active,
     display: flex;
     align-items: center;
     gap: var(--space-md);
+    /* Hidden by default - triple protection so iOS can't show it */
     transform: translateY(-200%);
-    transition: transform var(--transition-normal);
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform var(--transition-normal), opacity var(--transition-normal), visibility 0s linear var(--transition-normal);
 }
 
 .emergency-alert.visible {
     transform: translateY(0);
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition: transform var(--transition-normal), opacity var(--transition-normal), visibility 0s;
 }
 
 .emergency-alert-icon {
