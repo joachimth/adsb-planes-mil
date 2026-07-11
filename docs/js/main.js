@@ -22,10 +22,38 @@ const state = {
 
 // API-konfiguration
 const API_CONFIG = {
-    proxyUrl: 'https://corsproxy.io/?key=0f67e3f0&url=',
     baseUrl: 'https://api.adsb.lol/v2/mil',
     updateInterval: 30000 // 30 sekunder
 };
+
+// CORS proxy fallback chain - tries each in order until one succeeds
+const PROXY_LIST = [
+    { name: 'corsproxy.io', build: url => 'https://corsproxy.io/?key=0f67e3f0&url=' + encodeURIComponent(url) },
+    { name: 'proxy.cors.sh', build: url => 'https://proxy.cors.sh/' + url }
+];
+
+/**
+ * Fetch with CORS proxy fallback - tries each proxy until one works
+ * @param {string} targetUrl - The actual API URL to fetch
+ * @param {Object} options - fetch() options
+ * @returns {Promise<Response>}
+ */
+async function fetchWithProxyFallback(targetUrl, options = {}) {
+    let lastError;
+    for (const proxy of PROXY_LIST) {
+        try {
+            const proxyUrl = proxy.build(targetUrl);
+            const response = await fetch(proxyUrl, options);
+            if (response.ok) return response;
+            console.warn(`⚠️ ${proxy.name} returned ${response.status}`);
+            lastError = new Error(`API-fejl: ${response.status} ${response.statusText}`);
+        } catch (e) {
+            console.warn(`⚠️ ${proxy.name} fejlede:`, e.message);
+            lastError = e;
+        }
+    }
+    throw lastError || new Error('Alle CORS-proxies fejlede');
+}
 
 /**
  * Applikationens hovedfunktion - starter når DOM er klar
@@ -112,13 +140,12 @@ async function fetchFlightData() {
     }
 
     state.abortController = new AbortController();
-    const apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(API_CONFIG.baseUrl);
 
     console.log("🔄 Henter flydata...");
     setLoadingState(true);
 
     try {
-        const response = await fetch(apiUrl, {
+        const response = await fetchWithProxyFallback(API_CONFIG.baseUrl, {
             signal: AbortSignal.timeout(10000), // 10 second timeout
             headers: { 'Accept': 'application/json' }
         });

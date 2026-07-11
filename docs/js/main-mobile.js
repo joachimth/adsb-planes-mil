@@ -42,13 +42,41 @@ const state = {
 
 // API Configuration
 const API_CONFIG = {
-    proxyUrl: 'https://corsproxy.io/?key=0f67e3f0&url=',
     militaryUrl: 'https://api.adsb.lol/v2/mil',
     allAircraftBaseUrl: 'https://api.adsb.lol/v2',  // Will use /lat/{lat}/lon/{lon}/dist/{distance}
     updateInterval: 30000, // 30 seconds
     maxAircraft: 500,  // Performance limit
     maxRadius: 250  // Max radius in NM for ADSB.lol API
 };
+
+// CORS proxy fallback chain - tries each in order until one succeeds
+const PROXY_LIST = [
+    { name: 'corsproxy.io', build: url => 'https://corsproxy.io/?key=0f67e3f0&url=' + encodeURIComponent(url) },
+    { name: 'proxy.cors.sh', build: url => 'https://proxy.cors.sh/' + url }
+];
+
+/**
+ * Fetch with CORS proxy fallback - tries each proxy until one works
+ * @param {string} targetUrl - The actual API URL to fetch
+ * @param {Object} options - fetch() options
+ * @returns {Promise<Response>}
+ */
+async function fetchWithProxyFallback(targetUrl, options = {}) {
+    let lastError;
+    for (const proxy of PROXY_LIST) {
+        try {
+            const proxyUrl = proxy.build(targetUrl);
+            const response = await fetch(proxyUrl, options);
+            if (response.ok) return response;
+            console.warn(`⚠️ ${proxy.name} returned ${response.status}`);
+            lastError = new Error(`API fejl: ${response.status}`);
+        } catch (e) {
+            console.warn(`⚠️ ${proxy.name} fejlede:`, e.message);
+            lastError = e;
+        }
+    }
+    throw lastError || new Error('Alle CORS-proxies fejlede');
+}
 
 /**
  * Calculate radius in nautical miles from bounding box
@@ -230,20 +258,15 @@ async function fetchAircraftData() {
 
         } else {
             // Military-only endpoint
-            const apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(API_CONFIG.militaryUrl);
             console.log("🪖 BRUGER MILITÆR-ONLY API");
             if (filterState.showAllAircraft) {
                 console.warn("⚠️ Alle fly aktiveret men region er global - bruger militær API");
             }
 
-            const response = await fetch(apiUrl, {
+            const response = await fetchWithProxyFallback(API_CONFIG.militaryUrl, {
                 signal: state.abortController.signal,
                 headers: { 'Accept': 'application/json' }
             });
-
-            if (!response.ok) {
-                throw new Error(`API fejl: ${response.status}`);
-            }
 
             const data = await response.json();
             aircraftList = data.ac || [];
@@ -301,17 +324,12 @@ async function fetchAircraftData() {
  * @returns {Promise<Array>} - Array of aircraft
  */
 async function fetchFromPoint(lat, lon, radiusNM, signal) {
-    const baseUrl = `${API_CONFIG.allAircraftBaseUrl}/lat/${lat}/lon/${lon}/dist/${radiusNM}`;
-    const apiUrl = API_CONFIG.proxyUrl + encodeURIComponent(baseUrl);
+    const targetUrl = `${API_CONFIG.allAircraftBaseUrl}/lat/${lat}/lon/${lon}/dist/${radiusNM}`;
 
-    const response = await fetch(apiUrl, {
+    const response = await fetchWithProxyFallback(targetUrl, {
         signal: signal,
         headers: { 'Accept': 'application/json' }
     });
-
-    if (!response.ok) {
-        throw new Error(`API fejl: ${response.status}`);
-    }
 
     const data = await response.json();
     return data.ac || [];

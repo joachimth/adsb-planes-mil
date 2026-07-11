@@ -11,10 +11,38 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 timer
 
 // API konfiguration
 const API_CONFIG = {
-    proxyUrl: 'https://corsproxy.io/?key=0f67e3f0&url=',
     adsbLol: 'https://api.adsb.lol/v2',
     adsbFi: 'https://opendata.adsb.fi/api/v2'
 };
+
+// CORS proxy fallback chain - tries each in order until one succeeds
+const PROXY_LIST = [
+    { name: 'corsproxy.io', build: url => 'https://corsproxy.io/?key=0f67e3f0&url=' + encodeURIComponent(url) },
+    { name: 'proxy.cors.sh', build: url => 'https://proxy.cors.sh/' + url }
+];
+
+/**
+ * Fetch with CORS proxy fallback - tries each proxy until one works
+ * @param {string} targetUrl - The actual API URL to fetch
+ * @param {Object} options - fetch() options
+ * @returns {Promise<Response>}
+ */
+async function fetchWithProxyFallback(targetUrl, options = {}) {
+    let lastError;
+    for (const proxy of PROXY_LIST) {
+        try {
+            const proxyUrl = proxy.build(targetUrl);
+            const response = await fetch(proxyUrl, options);
+            if (response.ok) return response;
+            console.warn(`⚠️ ${proxy.name} returned ${response.status}`);
+            lastError = new Error(`HTTP ${response.status}`);
+        } catch (e) {
+            console.warn(`⚠️ ${proxy.name} fejlede:`, e.message);
+            lastError = e;
+        }
+    }
+    throw lastError || new Error('Alle CORS-proxies fejlede');
+}
 
 /**
  * Get aircraft information by registration or hex code
@@ -123,17 +151,11 @@ export async function getAircraftInfo(registration, hex) {
 async function fetchFromADSBLol(endpoint, value) {
     try {
         const apiUrl = `${API_CONFIG.adsbLol}/${endpoint}/${value}`;
-        const url = API_CONFIG.proxyUrl + encodeURIComponent(apiUrl);
 
-        const response = await fetch(url, {
+        const response = await fetchWithProxyFallback(apiUrl, {
             headers: { 'Accept': 'application/json' },
             signal: AbortSignal.timeout(5000) // 5 second timeout
         });
-
-        if (!response.ok) {
-            console.warn(`⚠️ ADSB.lol API: HTTP ${response.status} for ${endpoint}/${value}`);
-            return null;
-        }
 
         const data = await response.json();
 
@@ -161,9 +183,8 @@ async function fetchFromADSBLol(endpoint, value) {
 async function fetchFromADSBFi(endpoint, value) {
     try {
         const apiUrl = `${API_CONFIG.adsbFi}/${endpoint}/${value}`;
-        const url = API_CONFIG.proxyUrl + encodeURIComponent(apiUrl);
 
-        const response = await fetch(url, {
+        const response = await fetchWithProxyFallback(apiUrl, {
             headers: { 'Accept': 'application/json' },
             signal: AbortSignal.timeout(5000) // 5 second timeout
         });
