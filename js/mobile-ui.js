@@ -299,6 +299,11 @@ function initBottomSheet() {
     });
 }
 
+// Flight-route interval state. Intervals mirror track-store TRACK_INTERVALS.
+const TRACK_INTERVAL_MS = { '15m': 15 * 60 * 1000, '1h': 60 * 60 * 1000, '3h': 3 * 60 * 60 * 1000, 'all': null };
+let currentTrackInterval = 'all';
+let trackControlsBound = false;
+
 export function openBottomSheet(aircraft) {
     const bottomSheet = document.getElementById('bottomSheet');
     if (!bottomSheet) return;
@@ -311,6 +316,10 @@ export function openBottomSheet(aircraft) {
 
     // Update follow button state
     updateFollowButton();
+
+    // Draw this aircraft's route using the current interval selection.
+    bindTrackControls();
+    refreshTrack({ fit: true });
 
     // Show bottom sheet
     bottomSheet.classList.add('visible');
@@ -325,9 +334,63 @@ export function closeBottomSheet() {
     uiState.bottomSheetVisible = false;
     uiState.selectedAircraft = null;
 
+    // Remove the route polyline from the map.
+    document.dispatchEvent(new CustomEvent('clearTrack'));
+
     bottomSheet.classList.remove('visible');
     bottomSheet.classList.remove('dragging', 'snapping');
     bottomSheet.style.transform = '';
+}
+
+/** Redraw the selected aircraft's route for the current interval. */
+function refreshTrack(opts = {}) {
+    const ac = uiState.selectedAircraft;
+    if (!ac || !ac.hex) return;
+    const category = determineAircraftCategory(ac);
+    document.dispatchEvent(new CustomEvent('showTrack', {
+        detail: {
+            hex: ac.hex,
+            category,
+            intervalMs: TRACK_INTERVAL_MS[currentTrackInterval],
+            fit: !!opts.fit
+        }
+    }));
+}
+
+/** Wire the interval buttons + the route-count feedback once. */
+function bindTrackControls() {
+    if (trackControlsBound) return;
+    trackControlsBound = true;
+
+    const container = document.getElementById('routeInterval');
+    if (container) {
+        container.querySelectorAll('.route-interval-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentTrackInterval = btn.dataset.interval || 'all';
+                container.querySelectorAll('.route-interval-btn')
+                    .forEach(b => b.classList.toggle('active', b === btn));
+                refreshTrack({ fit: true });
+            });
+        });
+    }
+
+    // Update the "N sporpunkter" meta text whenever the map reports a draw.
+    document.addEventListener('trackDrawn', (e) => {
+        const meta = document.getElementById('routeMeta');
+        if (!meta) return;
+        const n = e.detail?.count ?? 0;
+        meta.textContent = n < 2
+            ? 'Ingen rute endnu — bygges løbende'
+            : `${n} sporpunkter`;
+    });
+
+    // Extend the route live as new positions arrive, but don't re-fit the map
+    // (that would fight the user panning/zooming).
+    document.addEventListener('aircraftDataUpdated', () => {
+        if (uiState.bottomSheetVisible && uiState.selectedAircraft) {
+            refreshTrack({ fit: false });
+        }
+    });
 }
 
 /**

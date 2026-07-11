@@ -32,7 +32,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
     <!-- Custom Mobile-First CSS -->
-    <link rel="stylesheet" href="style.css?v=20260711d">
+    <link rel="stylesheet" href="style.css?v=20260711e">
 
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://unpkg.com">
@@ -208,6 +208,20 @@
                         <div class="detail-value" id="detailDistance">
                             ---<span class="detail-unit">km</span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Flight route / track -->
+                <div class="aircraft-route-section" id="aircraftRouteSection">
+                    <div class="route-header">
+                        <span class="route-title">Rute</span>
+                        <span class="route-meta" id="routeMeta">Ingen sporpunkter endnu</span>
+                    </div>
+                    <div class="route-interval" id="routeInterval" role="group" aria-label="Vælg tidsinterval for rute">
+                        <button class="route-interval-btn" data-interval="15m" type="button">15 min</button>
+                        <button class="route-interval-btn" data-interval="1h" type="button">1 time</button>
+                        <button class="route-interval-btn" data-interval="3h" type="button">3 timer</button>
+                        <button class="route-interval-btn active" data-interval="all" type="button">Alt</button>
                     </div>
                 </div>
 
@@ -396,6 +410,6 @@
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
     <!-- App JavaScript (ES6 Module) -->
-    <script type="module" src="js/main-mobile.js?v=20260711d"></script>
+    <script type="module" src="js/main-mobile.js?v=20260711e"></script>
 </body>
 </html>

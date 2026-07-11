@@ -37,6 +37,7 @@ cp js/regions.js docs/js/
 cp js/heatmap.js docs/js/
 cp js/aircraft-info.js docs/js/
 cp js/squawk-lookup.js docs/js/
+cp js/track-store.js docs/js/
 
 # Also copy desktop JS (kept for reference, not loaded by mobile)
 cp js/main.js docs/js/

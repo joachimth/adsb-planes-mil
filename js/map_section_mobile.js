@@ -7,12 +7,22 @@ console.log("✅ map_section_mobile.js er indlæst.");
 
 import { determineAircraftCategory, openBottomSheet } from './mobile-ui.js';
 import { getSquawkDescription } from './squawk-lookup.js';
+import { getTrack } from './track-store.js';
 
 // Map state
 let myMap;
 let flightMarkersLayer;
 let boundingBoxLayer = null;
 let followedAircraft = null;
+let trackLayer = null;       // Leaflet layerGroup holding the current route polyline
+
+// Route colours per category (match marker colours)
+const TRACK_COLORS = {
+    military: '#22c55e',
+    emergency: '#ef4444',
+    special: '#eab308',
+    civilian: '#3b82f6'
+};
 
 // Color-coded icons
 const icons = {
@@ -91,6 +101,19 @@ export function initMap() {
         document.addEventListener('unfollowAircraft', () => {
             followedAircraft = null;
         });
+
+        // Flight-route events (dispatched from the bottom sheet / mobile-ui).
+        // detail: { hex, category, intervalMs, fit }
+        document.addEventListener('showTrack', (e) => {
+            const { hex, category, intervalMs, fit } = e.detail || {};
+            const points = getTrack(hex, intervalMs);
+            drawTrack(points, category, { fit: !!fit });
+            document.dispatchEvent(new CustomEvent('trackDrawn', {
+                detail: { hex, count: points.length }
+            }));
+        });
+
+        document.addEventListener('clearTrack', () => clearTrack());
 
         console.log("✅ Kort initialiseret.");
 
@@ -254,6 +277,60 @@ function centerOnAircraft(aircraft) {
         animate: true,
         duration: 0.5
     });
+}
+
+/**
+ * Draw a flight route polyline from buffered track points.
+ * @param {Array} points - array of [lat, lon, altBaro, tsMs]
+ * @param {string} category - 'military' | 'emergency' | 'special' | 'civilian'
+ * @param {Object} [opts] - { fit: boolean } whether to fit the map to the route
+ */
+export function drawTrack(points, category = 'military', opts = {}) {
+    if (!myMap) return;
+    clearTrack();
+
+    if (!Array.isArray(points) || points.length < 2) {
+        // Nothing meaningful to draw (0 or 1 point).
+        return;
+    }
+
+    const color = TRACK_COLORS[category] || TRACK_COLORS.military;
+    const latlngs = points.map(p => [p[0], p[1]]);
+
+    trackLayer = L.layerGroup();
+
+    // Casing underneath for contrast on the dark map, then the coloured line.
+    L.polyline(latlngs, { color: '#000', weight: 6, opacity: 0.35, lineJoin: 'round' }).addTo(trackLayer);
+    L.polyline(latlngs, { color, weight: 3, opacity: 0.9, lineJoin: 'round' }).addTo(trackLayer);
+
+    // Small dot at each recorded sample; start marker hollow, end marker solid.
+    points.forEach((p, i) => {
+        const isEnd = i === points.length - 1;
+        const isStart = i === 0;
+        L.circleMarker([p[0], p[1]], {
+            radius: isEnd ? 5 : (isStart ? 4 : 2.5),
+            color: isEnd ? color : '#fff',
+            weight: isEnd ? 2 : 1,
+            fillColor: color,
+            fillOpacity: isStart ? 0.2 : 0.9
+        }).addTo(trackLayer);
+    });
+
+    trackLayer.addTo(myMap);
+
+    if (opts.fit) {
+        try {
+            myMap.fitBounds(L.latLngBounds(latlngs), { padding: [50, 50], maxZoom: 10 });
+        } catch (_) { /* ignore */ }
+    }
+}
+
+/** Remove the current route polyline from the map. */
+export function clearTrack() {
+    if (trackLayer && myMap) {
+        myMap.removeLayer(trackLayer);
+    }
+    trackLayer = null;
 }
 
 /**

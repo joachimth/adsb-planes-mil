@@ -10,6 +10,7 @@ import { initListView, toggleListView, updateListView } from './list-view.js';
 import { loadSquawkCodes } from './squawk-lookup.js';
 import { filterAircraftByRegion, getRegion, loadRegionPreference, saveRegionPreference } from './regions.js';
 import { initHeatmap, updateHeatmapData, isHeatmapEnabled } from './heatmap.js';
+import { recordPositions } from './track-store.js';
 
 // Global error handler - fanger alle uncaught errors
 window.addEventListener('error', (event) => {
@@ -202,6 +203,7 @@ async function fetchAircraftData() {
 
     try {
         let aircraftList = [];
+        let lastNow = null; // adsb.lol envelope `now` (Unix seconds) when available
 
         if (filterState.showAllAircraft && state.selectedRegion !== 'global') {
             // Region-based endpoint for all aircraft
@@ -270,6 +272,7 @@ async function fetchAircraftData() {
 
             const data = await response.json();
             aircraftList = data.ac || [];
+            lastNow = data.now; // envelope timestamp for accurate position times
 
             // Debug: Check coordinates in raw API response
             const withCoords = aircraftList.filter(a => a.lat && a.lon);
@@ -285,6 +288,11 @@ async function fetchAircraftData() {
             }
         }
 
+        // Buffer positions for flight-route tracking (ALL aircraft, background),
+        // before the display cap so tracks are complete. Falls back to Date.now()
+        // when the grid/point branches didn't carry an envelope `now`.
+        recordPositions(aircraftList, lastNow);
+
         // Performance safeguard: Limit to maxAircraft
         if (aircraftList.length > API_CONFIG.maxAircraft) {
             console.warn(`⚠️ ${aircraftList.length} fly fundet - begrænser til ${API_CONFIG.maxAircraft}`);
@@ -293,6 +301,9 @@ async function fetchAircraftData() {
 
         state.allAircraft = aircraftList;
         state.lastUpdated = new Date();
+
+        // Let the open bottom sheet extend the selected aircraft's route.
+        document.dispatchEvent(new CustomEvent('aircraftDataUpdated'));
 
         console.log(`✅ ${state.allAircraft.length} fly i final dataset`);
 
