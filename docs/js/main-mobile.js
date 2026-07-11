@@ -42,7 +42,7 @@ const state = {
 
 // API Configuration
 const API_CONFIG = {
-    proxyUrl: 'https://corsproxy.io/?url=',
+    proxyUrl: 'https://corsproxy.io/?key=0f67e3f0&url=',
     militaryUrl: 'https://api.adsb.lol/v2/mil',
     allAircraftBaseUrl: 'https://api.adsb.lol/v2',  // Will use /lat/{lat}/lon/{lon}/dist/{distance}
     updateInterval: 30000, // 30 seconds

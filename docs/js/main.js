@@ -22,7 +22,7 @@ const state = {
 
 // API-konfiguration
 const API_CONFIG = {
-    proxyUrl: 'https://corsproxy.io/?url=',
+    proxyUrl: 'https://corsproxy.io/?key=0f67e3f0&url=',
     baseUrl: 'https://api.adsb.lol/v2/mil',
     updateInterval: 30000 // 30 sekunder
 };

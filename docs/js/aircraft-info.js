@@ -11,7 +11,7 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 timer
 
 // API konfiguration
 const API_CONFIG = {
-    proxyUrl: 'https://corsproxy.io/?url=',
+    proxyUrl: 'https://corsproxy.io/?key=0f67e3f0&url=',
     adsbLol: 'https://api.adsb.lol/v2',
     adsbFi: 'https://opendata.adsb.fi/api/v2'
 };
