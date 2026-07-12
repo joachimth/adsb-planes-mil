@@ -24,7 +24,7 @@
         { "code": "4000", "description": "Militære operationer (generelt)", "checked": true, "disabled": false },
         { "code": "4400-4477", "description": "Militære reserverede områder", "checked": true, "disabled": false },
         { "code": "7401-7477", "description": "Militære øvelser & UAV-missioner", "checked": true, "disabled": false },
-        { "code": "7610-7676", "description": "Specifikke militære missioner", "checked": true, "disabled": false },
+        { "code": "7610-7676", "description": "Regionalt tildelt (kan bruges civilt)", "checked": true, "disabled": false },
         { "code": "0033", "description": "Faldskærmsudspring (Europa)", "checked": true, "disabled": false },
         { "code": "4575", "description": "NATO AWACS-flyvning", "checked": true, "disabled": false }
       ]

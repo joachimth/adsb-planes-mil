@@ -1118,52 +1118,44 @@ VIGTIGT: Brug ikke til navigation eller sikkerhedskritiske formål.`);
 export function determineAircraftCategory(aircraft) {
     const squawk = aircraft.squawk;
 
-    // Emergency (highest priority)
+    // --- 1. EMERGENCY (highest priority) -----------------------------------
+    // Universal, globally-reserved codes + adsb.lol's own emergency field.
+    // These three codes mean the same thing everywhere, so they're safe.
     if (['7500', '7600', '7700'].includes(squawk)) {
         return 'emergency';
     }
+    const emg = aircraft.emergency;
+    if (emg && emg !== 'none' && emg !== 'no') {
+        return 'emergency';
+    }
 
-    // Special squawk codes (including civilian special operations)
-    const specialSquawks = ['7000', '1200', '0020', '0021', '0022', '0023', '0024', '0025',
-                           '0030', '0031', '0032', '0033', '0100', '1255', '1277', '7400'];
+    // --- 2. MILITARY (authoritative) ---------------------------------------
+    // adsb.lol's dbFlags bit0 is the REAL military marker: it comes from the
+    // aircraft database (registration/operator), not a transient squawk. This
+    // is exactly how the /v2/mil endpoint itself decides. A squawk code alone
+    // does NOT make an aircraft military — regional Mode-A codes get reused by
+    // thousands of civilian flights daily (a real mil helicopter can squawk
+    // 1200, and an airliner can squawk 7622). So we trust dbFlags, not squawk.
+    const dbFlags = Number(aircraft.dbFlags) || 0;
+    if (dbFlags & 1) {
+        return 'military';
+    }
+
+    // --- 3. SPECIAL (narrow, meaningful only) ------------------------------
+    // Only a handful of codes that genuinely signal a non-routine flight and
+    // are not routinely handed to airliners. Broad ranges (3000-3777,
+    // 5000-5377, 7610-7676, 7401-7477) were REMOVED — they produced constant
+    // false positives on ordinary passenger jets. We keep just:
+    //   0033 = parachute dropping (Europe)
+    //   4000 = special/military ops general
+    //   4575 = NATO AWACS
+    //   7777 = military interception (SSR test / active intercept)
+    const specialSquawks = ['0033', '4000', '4575', '7777'];
     if (specialSquawks.includes(squawk)) {
         return 'special';
     }
 
-    // Special squawk ranges (civilian special missions)
-    const specialRanges = [
-        [3000, 3777],  // Diverse specialmissioner (often civilian)
-        [5000, 5377]   // Operationelle specialflyvninger
-    ];
-
-    // Military squawk ranges (actual military operations)
-    const militaryRanges = [
-        [4400, 4477],  // Militære reserverede områder
-        [7401, 7477],  // Militære øvelser & UAV-missioner
-        [7610, 7676],  // Specifikke militære missioner
-        [4000, 4000],  // Militære operationer (generelt)
-        [7777, 7777],  // Militær afvisning (interception)
-        [4575, 4575]   // NATO AWACS-flyvning
-    ];
-
-    const squawkNum = parseInt(squawk, 10);
-    if (!isNaN(squawkNum)) {
-        // Check special ranges first
-        for (const [start, end] of specialRanges) {
-            if (squawkNum >= start && squawkNum <= end) {
-                return 'special';
-            }
-        }
-
-        // Then check military ranges
-        for (const [start, end] of militaryRanges) {
-            if (squawkNum >= start && squawkNum <= end) {
-                return 'military';
-            }
-        }
-    }
-
-    // Everything else is civilian
+    // --- 4. CIVILIAN -------------------------------------------------------
     return 'civilian';
 }
 
