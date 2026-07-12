@@ -915,9 +915,11 @@ function followAircraft(aircraft) {
         // Update button
         updateFollowButton();
 
-        // Close bottom sheet after a short delay
+        // Hide the sheet so the map is unobstructed while following, but KEEP
+        // the route on the map and the aircraft selected so the line stays
+        // visible and keeps building.
         setTimeout(() => {
-            closeBottomSheet();
+            dismissBottomSheet();
         }, 300);
     }
 }

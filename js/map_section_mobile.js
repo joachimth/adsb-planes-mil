@@ -142,23 +142,28 @@ function createAircraftIcon(aircraft, category) {
     };
     const color = colors[category] || colors.civilian;
 
-    // Create HTML for rotated aircraft icon with enhanced glow
+    // Use an inline SVG plane that points TRUE NORTH (straight up) at 0°, so
+    // rotate(track) maps directly to compass heading with no glyph offset.
+    // (The ✈️ emoji has a platform-dependent baseline angle — Apple renders it
+    // pointing north-west — which made the icon point the wrong way vs. the
+    // route. An SVG removes that ambiguity and looks identical on every device.)
     const html = `
         <div style="
             transform: rotate(${heading}deg);
             transform-origin: center center;
-            font-size: 24px;
-            line-height: 1;
-            text-shadow:
-                0 0 2px rgba(0,0,0,0.9),
-                0 0 8px ${color},
-                0 0 12px ${color},
-                0 0 16px ${color};
+            width: 28px;
+            height: 28px;
+            line-height: 0;
             filter:
                 drop-shadow(0 0 4px ${color})
-                drop-shadow(0 2px 6px rgba(0,0,0,0.6))
-                brightness(1.1);
-        ">✈️</div>
+                drop-shadow(0 0 8px ${color})
+                drop-shadow(0 2px 4px rgba(0,0,0,0.7));
+        ">
+            <svg viewBox="0 0 24 24" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2 L14 12 L22 16 L22 18 L14 15.5 L14 20 L16.5 22 L16.5 23 L12 21.5 L7.5 23 L7.5 22 L10 20 L10 15.5 L2 18 L2 16 L10 12 Z"
+                      fill="${color}" stroke="rgba(0,0,0,0.85)" stroke-width="0.8" stroke-linejoin="round"/>
+            </svg>
+        </div>
     `;
 
     return L.divIcon({
