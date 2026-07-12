@@ -10,7 +10,7 @@ const filterState = {
     military: true,
     emergency: true,
     special: true,
-    showAllAircraft: false,  // Include civilian aircraft
+    showAllAircraft: true,  // Include civilian aircraft (default ON — show all over Europe)
     listViewActive: false
 };
 

@@ -31,7 +31,7 @@ export const REGIONS = {
         name: '🌍 Europa',
         center: [50.0, 10.0],
         zoom: 4,
-        bbox: [-15.0, 35.0, 40.0, 70.0],
+        bbox: [-5.0, 42.0, 30.0, 62.0],
         buffer: 250
     },
     northatlantic: {
@@ -55,7 +55,7 @@ export const REGIONS = {
 /**
  * Default region
  */
-export const DEFAULT_REGION = 'nordic';
+export const DEFAULT_REGION = 'europe';
 
 /**
  * Check if coordinates are within bounding box

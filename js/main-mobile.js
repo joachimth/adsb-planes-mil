@@ -11,6 +11,7 @@ import { loadSquawkCodes } from './squawk-lookup.js';
 import { filterAircraftByRegion, getRegion, loadRegionPreference, saveRegionPreference } from './regions.js';
 import { initHeatmap, updateHeatmapData, isHeatmapEnabled } from './heatmap.js';
 import { recordPositions } from './track-store.js';
+import { HISTORY_PROXY_BASE } from './history-proxy.js';
 
 // Global error handler - fanger alle uncaught errors
 window.addEventListener('error', (event) => {
@@ -34,11 +35,12 @@ console.log("✈️ MilAir Watch Mobile startet...");
 const state = {
     allAircraft: [],
     filteredAircraft: [],
-    selectedRegion: 'nordic', // Will be loaded from localStorage
+    selectedRegion: 'europe', // Will be loaded from localStorage
     showingAllAircraft: false, // Track if we're currently showing all aircraft
     lastUpdated: null,
     isLoading: false,
-    abortController: null
+    abortController: null,
+    pollTimer: null
 };
 
 // API Configuration
@@ -184,8 +186,12 @@ function generateGridPoints(bbox) {
     const [west, south, east, north] = bbox;
     const gridPoints = [];
 
-    // Grid spacing: 250 NM * 1.4 = ~350 NM for good overlap
-    const gridSpacingNM = 350;
+    // adsb.lol rate-limits hard, so grid calls run SEQUENTIALLY (~1/sec) rather
+    // than in parallel. 400 NM spacing with 250 NM radius circles covers Europe
+    // (-10..40 lon, 50..70 lat) in ~17 points = ~17 sec per full refresh — fits
+    // inside the 30s poll gap with margin for 429 backoffs. Slow but complete:
+    // the tradeoff Joachim chose ("throttled_grid").
+    const gridSpacingNM = 400;
     const latSpacing = gridSpacingNM / 60; // degrees
 
     let lat = south;
@@ -241,8 +247,23 @@ async function main() {
         // Initial data fetch
         await fetchAircraftData();
 
-        // Start periodic updates
-        setInterval(fetchAircraftData, API_CONFIG.updateInterval);
+        // Self-chaining poll instead of a fixed setInterval. A throttled
+        // all-Europe grid sweep can take 15-30s; a blind interval would fire
+        // the next poll (which aborts the previous one) before the sweep
+        // finishes, so the map would never fully populate. Chaining waits for
+        // each sweep to complete, THEN schedules the next after updateInterval.
+        const scheduleNextPoll = () => {
+            state.pollTimer = setTimeout(async () => {
+                try {
+                    await fetchAircraftData();
+                } catch (e) {
+                    console.warn('Poll fejlede:', e);
+                } finally {
+                    scheduleNextPoll();
+                }
+            }, API_CONFIG.updateInterval);
+        };
+        scheduleNextPoll();
 
         console.log("✅ Applikation klar!");
 
@@ -287,39 +308,64 @@ async function fetchAircraftData() {
                 console.log(`📐 Område for stort (${radiusNM} NM) - bruger grid med ${API_CONFIG.maxRadius} NM celler`);
                 const gridPoints = generateGridPoints(region.bbox);
 
-                console.log(`🔄 Henter data fra ${gridPoints.length} grid punkter...`);
-                showStatusIndicator(`Henter data fra ${gridPoints.length} områder...`);
+                console.log(`🔄 Henter data fra ${gridPoints.length} grid punkter (sekventielt, ~1/sek)...`);
+                showStatusIndicator(`Henter Europa: 0/${gridPoints.length} områder...`);
 
-                // Fetch from all grid points in parallel (with limit)
-                const batchSize = 5; // Max concurrent requests
-                const allAircraft = new Map(); // Use Map to deduplicate by hex
+                // adsb.lol rate-limits aggressively (and hits our Worker's shared
+                // Cloudflare IP extra hard), so calls run STRICTLY SEQUENTIALLY
+                // with ~1s spacing. On a 429 we back off and retry once, then skip
+                // that point rather than stalling the whole refresh. Slow but it
+                // actually completes — the "throttled_grid" tradeoff.
+                const reqSpacingMs = 1000;   // ~1 request/second
+                const maxRetries = 1;        // one backoff retry per point on 429
+                const backoffMs = 2500;      // wait before the retry
+                const allAircraft = new Map(); // dedupe by hex
+                let rateLimited = 0, failed = 0;
 
-                for (let i = 0; i < gridPoints.length; i += batchSize) {
-                    const batch = gridPoints.slice(i, i + batchSize);
-                    const promises = batch.map(point =>
-                        fetchFromPoint(point.lat, point.lon, API_CONFIG.maxRadius, state.abortController.signal)
-                    );
+                for (let i = 0; i < gridPoints.length; i++) {
+                    if (state.abortController.signal.aborted) break;
+                    const point = gridPoints[i];
 
-                    const results = await Promise.allSettled(promises);
+                    let attempt = 0;
+                    let done = false;
+                    while (attempt <= maxRetries && !done) {
+                        const res = await fetchFromPoint(
+                            point.lat, point.lon, API_CONFIG.maxRadius,
+                            state.abortController.signal
+                        );
 
-                    results.forEach((result, idx) => {
-                        if (result.status === 'fulfilled') {
-                            result.value.forEach(aircraft => {
-                                // Deduplicate by hex (ICAO identifier)
-                                if (aircraft.hex) {
-                                    allAircraft.set(aircraft.hex, aircraft);
-                                }
-                            });
+                        if (res.rateLimited) {
+                            if (attempt < maxRetries) {
+                                console.warn(`⏳ Grid ${i + 1}/${gridPoints.length} rate-limited (429), venter ${backoffMs}ms og prøver igen`);
+                                await new Promise(r => setTimeout(r, backoffMs));
+                                attempt++;
+                                continue;
+                            }
+                            rateLimited++;
+                            console.warn(`⚠️ Grid ${i + 1}/${gridPoints.length} sprunget over (429 efter retry)`);
+                            done = true;
+                        } else if (res.error) {
+                            failed++;
+                            console.warn(`⚠️ Grid ${i + 1}/${gridPoints.length} fejlede:`, res.error);
+                            done = true;
                         } else {
-                            console.warn(`⚠️ Grid punkt ${i + idx} fejlede:`, result.reason);
+                            res.aircraft.forEach(aircraft => {
+                                if (aircraft.hex) allAircraft.set(aircraft.hex, aircraft);
+                            });
+                            done = true;
                         }
-                    });
+                    }
 
-                    console.log(`✅ Batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(gridPoints.length/batchSize)} færdig. Total: ${allAircraft.size} unikke fly`);
+                    showStatusIndicator(`Henter Europa: ${i + 1}/${gridPoints.length} • ${allAircraft.size} fly`);
+
+                    // Pace the next request (skip the wait after the final point).
+                    if (i < gridPoints.length - 1 && !state.abortController.signal.aborted) {
+                        await new Promise(r => setTimeout(r, reqSpacingMs));
+                    }
                 }
 
                 aircraftList = Array.from(allAircraft.values());
-                console.log(`✅ ${aircraftList.length} unikke fly hentet fra ${gridPoints.length} grid punkter`);
+                console.log(`✅ ${aircraftList.length} unikke fly fra ${gridPoints.length} punkter (${rateLimited} rate-limited, ${failed} fejl)`);
 
             } else {
                 // Single API call for small areas
@@ -327,7 +373,11 @@ async function fetchAircraftData() {
                 console.log(`✅ BRUGER ENKELT API CALL (${radiusNM} NM radius)`);
                 console.log(`📍 Center: [${lat}, ${lon}], Region: ${state.selectedRegion}`);
 
-                aircraftList = await fetchFromPoint(lat, lon, radiusNM, state.abortController.signal);
+                const single = await fetchFromPoint(lat, lon, radiusNM, state.abortController.signal);
+                aircraftList = single.aircraft;
+                if (single.rateLimited) {
+                    console.warn('⚠️ Enkelt-kald rate-limited (429) — viser hvad vi har');
+                }
             }
 
         } else {
@@ -407,15 +457,56 @@ async function fetchAircraftData() {
  * @returns {Promise<Array>} - Array of aircraft
  */
 async function fetchFromPoint(lat, lon, radiusNM, signal) {
-    const targetUrl = `${API_CONFIG.allAircraftBaseUrl}/lat/${lat}/lon/${lon}/dist/${radiusNM}`;
+    // Returns { aircraft: [...], rateLimited: bool, error: string|null } so the
+    // sequential grid loop can distinguish "throttled → back off" from a genuine
+    // failure or an empty-but-successful response.
 
-    const response = await fetchWithProxyFallback(targetUrl, {
-        signal: signal,
-        headers: { 'Accept': 'application/json' }
-    });
+    // Prefer our own Worker's /live proxy — one reliable CORS-enabled hop.
+    // The Worker surfaces adsb.lol's 429 as HTTP 429 or {status:429}, so detect
+    // both and signal rateLimited instead of silently falling through.
+    if (HISTORY_PROXY_BASE) {
+        try {
+            const liveUrl = `${HISTORY_PROXY_BASE}/live?lat=${lat}&lon=${lon}&dist=${radiusNM}`;
+            const r = await fetch(liveUrl, { signal, headers: { 'Accept': 'application/json' } });
+            if (r.status === 429) {
+                return { aircraft: [], rateLimited: true, error: null };
+            }
+            if (r.ok) {
+                const d = await r.json();
+                if (d && d.status === 429) {
+                    return { aircraft: [], rateLimited: true, error: null };
+                }
+                return { aircraft: d.ac || [], rateLimited: false, error: null };
+            }
+            // Non-OK, non-429 → try the public proxy chain below.
+        } catch (e) {
+            if (signal && signal.aborted) {
+                return { aircraft: [], rateLimited: false, error: 'aborted' };
+            }
+            /* fall through to proxy chain */
+        }
+    }
 
-    const data = await response.json();
-    return data.ac || [];
+    try {
+        const targetUrl = `${API_CONFIG.allAircraftBaseUrl}/lat/${lat}/lon/${lon}/dist/${radiusNM}`;
+        const response = await fetchWithProxyFallback(targetUrl, {
+            signal: signal,
+            headers: { 'Accept': 'application/json' }
+        });
+        if (response.status === 429) {
+            return { aircraft: [], rateLimited: true, error: null };
+        }
+        const data = await response.json();
+        return { aircraft: data.ac || [], rateLimited: false, error: null };
+    } catch (e) {
+        const msg = String(e && e.message || e);
+        // The proxy chain throws a plain Error on 429 rather than returning a
+        // Response; detect it so the caller's backoff path engages here too.
+        if (msg.includes('429')) {
+            return { aircraft: [], rateLimited: true, error: null };
+        }
+        return { aircraft: [], rateLimited: false, error: msg };
+    }
 }
 
 /**
