@@ -1056,8 +1056,9 @@ button.heatmap-mode-btn.active,
    holds the status indicator and the bottom-right holds the Leaflet
    attribution, so both right corners collide. Bottom-left is clear. */
 .map-fab {
-    position: absolute;
-    bottom: calc(env(safe-area-inset-bottom) + var(--space-md));
+    position: fixed;
+    /* Sit above the filter bar (72px tall) + safe area so it clears it. */
+    bottom: calc(72px + env(safe-area-inset-bottom) + var(--space-md));
     left: var(--space-md);
     display: inline-flex;
     align-items: center;
@@ -1070,9 +1071,9 @@ button.heatmap-mode-btn.active,
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    /* Must sit above Leaflet's internal panes (which climb to ~400-700 inside
-       #map). Use the filter-bar tier so nothing on the map covers it. */
-    z-index: var(--z-filter-bar);
+    /* position:fixed lifts it out of the map's stacking context entirely, so
+       Leaflet panes can't cover it. Sit at the emergency tier to be safe. */
+    z-index: var(--z-emergency);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
     -webkit-tap-highlight-color: transparent;
     transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;

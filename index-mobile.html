@@ -32,7 +32,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
     <!-- Custom Mobile-First CSS -->
-    <link rel="stylesheet" href="style-mobile.css?v=20260712f">
+    <link rel="stylesheet" href="style-mobile.css?v=20260712g">
 
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://unpkg.com">
@@ -59,13 +59,6 @@
         <!-- Fullscreen Map -->
         <div class="map-container">
             <div id="map" role="application" aria-label="Interaktivt radar-kort"></div>
-
-            <!-- Floating toggle: draw route trails for ALL visible aircraft -->
-            <button class="map-fab" id="toggleAllTracks" type="button"
-                    aria-pressed="false" aria-label="Vis spor på alle synlige fly">
-                <span class="map-fab-icon">🛰️</span>
-                <span class="map-fab-label">Alle spor</span>
-            </button>
 
             <!-- Heatmap Legend (hidden by default) -->
             <div class="heatmap-legend" id="heatmapLegend" style="display: none;">
@@ -154,6 +147,15 @@
             <div class="status-spinner"></div>
             <span id="statusText">Henter data...</span>
         </div>
+
+        <!-- Floating toggle: draw route trails for ALL visible aircraft.
+             Placed OUTSIDE .map-container (a sibling of statusIndicator) and
+             position:fixed, so Leaflet's map panes can never cover it. -->
+        <button class="map-fab" id="toggleAllTracks" type="button"
+                aria-pressed="false" aria-label="Vis spor på alle synlige fly">
+            <span class="map-fab-icon">🛰️</span>
+            <span class="map-fab-label">Alle spor</span>
+        </button>
 
         <!-- Bottom Sheet (Aircraft Details) -->
         <aside class="bottom-sheet" id="bottomSheet" role="dialog" aria-modal="false" aria-label="Flydetaljer">
@@ -417,6 +419,6 @@
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
     <!-- App JavaScript (ES6 Module) -->
-    <script type="module" src="js/main-mobile.js?v=20260712f"></script>
+    <script type="module" src="js/main-mobile.js?v=20260712g"></script>
 </body>
 </html>
