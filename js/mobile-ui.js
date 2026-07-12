@@ -301,8 +301,25 @@ function initBottomSheet() {
 
 // Flight-route interval state. Intervals mirror track-store TRACK_INTERVALS.
 const TRACK_INTERVAL_MS = { '15m': 15 * 60 * 1000, '1h': 60 * 60 * 1000, '3h': 3 * 60 * 60 * 1000, 'all': null };
-let currentTrackInterval = 'all';
+const TRACK_INTERVAL_KEY = 'route:interval'; // persisted choice, remembered across flights + sessions
 let trackControlsBound = false;
+
+function loadTrackInterval() {
+    const saved = (() => { try { return localStorage.getItem(TRACK_INTERVAL_KEY); } catch { return null; } })();
+    return (saved && saved in TRACK_INTERVAL_MS) ? saved : 'all';
+}
+
+// Remembered interval selection. Restored from the last time Joachim picked one.
+let currentTrackInterval = loadTrackInterval();
+
+/** Reflect the current interval in the button row's active state. */
+function syncIntervalButtons() {
+    const container = document.getElementById('routeInterval');
+    if (!container) return;
+    container.querySelectorAll('.route-interval-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.interval === currentTrackInterval);
+    });
+}
 
 export function openBottomSheet(aircraft) {
     const bottomSheet = document.getElementById('bottomSheet');
@@ -317,8 +334,10 @@ export function openBottomSheet(aircraft) {
     // Update follow button state
     updateFollowButton();
 
-    // Draw this aircraft's route using the current interval selection.
+    // Draw this aircraft's route using the remembered interval selection,
+    // and make the button row reflect that choice for the new aircraft.
     bindTrackControls();
+    syncIntervalButtons();
     refreshTrack({ fit: true });
 
     // Show bottom sheet
@@ -367,8 +386,8 @@ function bindTrackControls() {
         container.querySelectorAll('.route-interval-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 currentTrackInterval = btn.dataset.interval || 'all';
-                container.querySelectorAll('.route-interval-btn')
-                    .forEach(b => b.classList.toggle('active', b === btn));
+                try { localStorage.setItem(TRACK_INTERVAL_KEY, currentTrackInterval); } catch { /* ignore */ }
+                syncIntervalButtons();
                 refreshTrack({ fit: true });
             });
         });
