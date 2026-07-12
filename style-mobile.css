@@ -1052,10 +1052,12 @@ button.heatmap-mode-btn.active,
 }
 
 /* Heatmap legend */
-/* Floating "Alle spor" toggle — top-right over the map. */
+/* Floating "Alle spor" toggle — bottom-right over the map, clear of the top
+   status indicator (which shares the top-right corner) and above the filter
+   bar. Sits just over the map's bottom edge. */
 .map-fab {
     position: absolute;
-    top: calc(env(safe-area-inset-top) + var(--space-md));
+    bottom: calc(env(safe-area-inset-bottom) + var(--space-md));
     right: var(--space-md);
     display: inline-flex;
     align-items: center;
@@ -1068,7 +1070,7 @@ button.heatmap-mode-btn.active,
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    z-index: calc(var(--z-map) + 2);
+    z-index: calc(var(--z-map) + 5);
     backdrop-filter: blur(10px);
     -webkit-tap-highlight-color: transparent;
     transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
