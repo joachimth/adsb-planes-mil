@@ -320,7 +320,11 @@ export function drawTrack(points, category = 'military', opts = {}) {
 
     if (opts.fit) {
         try {
-            myMap.fitBounds(L.latLngBounds(latlngs), { padding: [50, 50], maxZoom: 10 });
+            const bounds = L.latLngBounds(latlngs);
+            // Short tracks (a plane that has barely moved) collapse to a few
+            // pixels and vanish under the marker at low zoom. Allow zooming in
+            // much closer so even a tight cluster is visibly a line.
+            myMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
         } catch (_) { /* ignore */ }
     }
 }
