@@ -1070,7 +1070,9 @@ button.heatmap-mode-btn.active,
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    z-index: calc(var(--z-map) + 5);
+    /* Must sit above Leaflet's internal panes (which climb to ~400-700 inside
+       #map). Use the filter-bar tier so nothing on the map covers it. */
+    z-index: var(--z-filter-bar);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
     -webkit-tap-highlight-color: transparent;
     transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
