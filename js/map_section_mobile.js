@@ -7,8 +7,9 @@ console.log("✅ map_section_mobile.js er indlæst.");
 
 import { determineAircraftCategory, openBottomSheet } from './mobile-ui.js';
 import { getSquawkDescription } from './squawk-lookup.js';
-import { getTrack } from './track-store.js';
+import { getTrack, recordPositions } from './track-store.js';
 import { getAircraftIconShape } from './aircraft-info.js';
+import { fetchHistoricalTrack, mergeTracks } from './history-proxy.js';
 
 // Map state
 let myMap;
@@ -105,12 +106,31 @@ export function initMap() {
 
         // Flight-route events (dispatched from the bottom sheet / mobile-ui).
         // detail: { hex, category, intervalMs, fit }
-        document.addEventListener('showTrack', (e) => {
+        document.addEventListener('showTrack', async (e) => {
             const { hex, category, intervalMs, fit } = e.detail || {};
-            const points = getTrack(hex, intervalMs);
+
+            // Step 1: Get local track-store points (always available)
+            const localPoints = getTrack(hex, intervalMs);
+
+            // Step 2: Try fetching historical track from the proxy (if configured).
+            // The proxy returns positions older than ~now - intervalMs, filling
+            // gaps the local buffer couldn't catch (e.g. flights before the app
+            // was open). For "all" time (no interval), fetch the last 6 hours
+            // to keep it snappy.
+            let historyPoints = [];
+            if (hex) {
+                const ageS = intervalMs
+                    ? Math.max(300, Math.round(intervalMs / 1000))
+                    : 6 * 3600; // default: last 6h for "all"
+                const lookbackS = Math.floor(Date.now() / 1000) - ageS;
+                historyPoints = await fetchHistoricalTrack(hex, lookbackS);
+            }
+
+            // Step 3: Merge local + history, dedup by timestamp
+            const points = mergeTracks(localPoints, historyPoints);
             drawTrack(points, category, { fit: !!fit });
             document.dispatchEvent(new CustomEvent('trackDrawn', {
-                detail: { hex, count: points.length }
+                detail: { hex, count: points.length, historyCount: historyPoints.length }
             }));
         });
 
