@@ -47,7 +47,8 @@ const API_CONFIG = {
     allAircraftBaseUrl: 'https://api.adsb.lol/v2',  // Will use /lat/{lat}/lon/{lon}/dist/{distance}
     updateInterval: 30000, // 30 seconds
     maxAircraft: 500,  // Performance limit
-    maxRadius: 250  // Max radius in NM for ADSB.lol API
+    maxRadius: 250,  // Max radius in NM for ADSB.lol API
+    fastTrackInterval: 8000  // Fast poll (ms) for the currently selected aircraft
 };
 
 // CORS proxy fallback chain - tries each in order until one succeeds
@@ -78,6 +79,77 @@ async function fetchWithProxyFallback(targetUrl, options = {}) {
     }
     throw lastError || new Error('Alle CORS-proxies fejlede');
 }
+
+/* ========================================
+   FAST TRACK POLLING — the selected aircraft
+   While an aircraft is selected we poll just its ICAO hex at a faster
+   cadence than the main 30s loop, so its route line builds quickly.
+   Uses /v2/hex/{hex} which returns the same {ac:[...], now} envelope shape.
+   ======================================== */
+
+let fastTrackTimer = null;
+let fastTrackHex = null;
+let fastTrackInFlight = false;
+
+async function fastTrackTick() {
+    if (!fastTrackHex || fastTrackInFlight) return;
+    fastTrackInFlight = true;
+    try {
+        const targetUrl = `${API_CONFIG.allAircraftBaseUrl}/hex/${fastTrackHex}`;
+        const response = await fetchWithProxyFallback(targetUrl, {
+            headers: { 'Accept': 'application/json' }
+        });
+        const data = await response.json();
+        const list = data.ac || [];
+        if (list.length > 0) {
+            // Buffer this aircraft's fresh position into the track store.
+            recordPositions(list, data.now);
+            // Nudge the UI to extend the drawn route.
+            document.dispatchEvent(new CustomEvent('aircraftDataUpdated'));
+        }
+    } catch (e) {
+        // Non-fatal: the 30s main loop still records positions. Back off a beat
+        // on rate-limiting so we don't hammer the proxy chain.
+        console.warn('⚠️ Hurtig sporing fejlede:', e.message);
+        if (/\b429\b/.test(e.message || '')) {
+            stopFastTrack();
+            // Resume after a cool-down if an aircraft is still selected.
+            setTimeout(() => { if (fastTrackHex) startFastTrackTimer(); }, 30000);
+        }
+    } finally {
+        fastTrackInFlight = false;
+    }
+}
+
+function startFastTrackTimer() {
+    if (fastTrackTimer) clearInterval(fastTrackTimer);
+    fastTrackTimer = setInterval(fastTrackTick, API_CONFIG.fastTrackInterval);
+}
+
+function startFastTrack(hex) {
+    if (!hex) return;
+    fastTrackHex = hex.toLowerCase();
+    // Fire once immediately so the line starts densifying without a delay.
+    fastTrackTick();
+    startFastTrackTimer();
+}
+
+function stopFastTrack() {
+    if (fastTrackTimer) {
+        clearInterval(fastTrackTimer);
+        fastTrackTimer = null;
+    }
+}
+
+// Wire selection events dispatched by the bottom sheet (decoupled via DOM
+// events to avoid a circular import between main-mobile and mobile-ui).
+document.addEventListener('aircraftSelected', (e) => {
+    startFastTrack(e.detail?.hex);
+});
+document.addEventListener('aircraftDeselected', () => {
+    fastTrackHex = null;
+    stopFastTrack();
+});
 
 /**
  * Calculate radius in nautical miles from bounding box

@@ -237,8 +237,9 @@ function initBottomSheet() {
         bottomSheet.classList.add('snapping');
 
         if (diff > SWIPE_THRESHOLD) {
-            // Swipe was far enough — close the sheet
-            closeBottomSheet();
+            // Swipe was far enough — dismiss the sheet but KEEP the route on the
+            // map so it stays visible (and keeps building) after the swipe.
+            dismissBottomSheet();
             // Clean up inline transform after close animation
             setTimeout(() => {
                 bottomSheet.style.transform = '';
@@ -344,8 +345,36 @@ export function openBottomSheet(aircraft) {
     bottomSheet.classList.add('visible');
     bottomSheet.classList.remove('dragging', 'snapping');
     bottomSheet.style.transform = '';
+
+    // Start fast-polling this specific aircraft so its route builds quickly.
+    if (aircraft?.hex) {
+        document.dispatchEvent(new CustomEvent('aircraftSelected', {
+            detail: { hex: aircraft.hex }
+        }));
+    }
 }
 
+/**
+ * Dismiss the sheet but KEEP the route on the map and the aircraft selected,
+ * so the line stays visible (and keeps building) after a swipe-down.
+ */
+export function dismissBottomSheet() {
+    const bottomSheet = document.getElementById('bottomSheet');
+    if (!bottomSheet) return;
+
+    uiState.bottomSheetVisible = false;
+    // NOTE: selectedAircraft is intentionally retained so the route persists
+    // and continues to extend on each poll.
+
+    bottomSheet.classList.remove('visible');
+    bottomSheet.classList.remove('dragging', 'snapping');
+    bottomSheet.style.transform = '';
+}
+
+/**
+ * Fully close: hide the sheet, clear the route, and deselect the aircraft.
+ * Used by the × button, tapping another plane, or tapping the empty map.
+ */
 export function closeBottomSheet() {
     const bottomSheet = document.getElementById('bottomSheet');
     if (!bottomSheet) return;
@@ -353,8 +382,9 @@ export function closeBottomSheet() {
     uiState.bottomSheetVisible = false;
     uiState.selectedAircraft = null;
 
-    // Remove the route polyline from the map.
+    // Remove the route polyline from the map and stop fast-polling.
     document.dispatchEvent(new CustomEvent('clearTrack'));
+    document.dispatchEvent(new CustomEvent('aircraftDeselected'));
 
     bottomSheet.classList.remove('visible');
     bottomSheet.classList.remove('dragging', 'snapping');
@@ -404,9 +434,10 @@ function bindTrackControls() {
     });
 
     // Extend the route live as new positions arrive, but don't re-fit the map
-    // (that would fight the user panning/zooming).
+    // (that would fight the user panning/zooming). Keep extending even when the
+    // sheet has been swiped away — as long as an aircraft is still selected.
     document.addEventListener('aircraftDataUpdated', () => {
-        if (uiState.bottomSheetVisible && uiState.selectedAircraft) {
+        if (uiState.selectedAircraft) {
             refreshTrack({ fit: false });
         }
     });

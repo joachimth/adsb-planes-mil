@@ -61,11 +61,20 @@ function distanceM(a, b) {
 /**
  * Record positions for a batch of aircraft from one poll cycle.
  * @param {Array} aircraftList - raw aircraft objects (need hex, lat, lon, alt_baro, seen_pos)
- * @param {number} nowSec - the response envelope's `now` (Unix seconds); falls back to Date.now()
+ * @param {number} now - the response envelope's `now`. adsb.lol returns this in
+ *   milliseconds (13 digits); older/other feeds may send seconds (10 digits).
+ *   We normalise by magnitude so timestamps are always ms. Falls back to Date.now().
  */
-export function recordPositions(aircraftList, nowSec) {
+export function recordPositions(aircraftList, now) {
     if (!Array.isArray(aircraftList) || aircraftList.length === 0) return;
-    const nowMs = (typeof nowSec === 'number' && nowSec > 0) ? nowSec * 1000 : Date.now();
+    // Normalise `now` to milliseconds. A seconds-based Unix time is ~1.7e9;
+    // a millisecond one is ~1.7e12. Anything below 1e12 is treated as seconds.
+    let nowMs;
+    if (typeof now === 'number' && now > 0) {
+        nowMs = now < 1e12 ? now * 1000 : now;
+    } else {
+        nowMs = Date.now();
+    }
     const idx = getIndex();
     const cutoff = Date.now() - MAX_AGE_MS;
 
