@@ -38,7 +38,63 @@ export function initMobileUI() {
     // Request geolocation if enabled
     checkGeolocation();
 
+    // "Alle spor" — route trails on every visible aircraft
+    initAllTracksToggle();
+
     console.log("✅ Mobile UI initialiseret.");
+}
+
+/* ========================================
+   ALL-TRACKS TOGGLE (route trails on every visible aircraft)
+   ======================================== */
+
+let allTracksOn = false;
+
+/** Gather the currently visible aircraft from the app state. */
+function getVisibleAircraft() {
+    try {
+        const st = (typeof window !== 'undefined' && window.getAppState) ? window.getAppState() : null;
+        const list = st && Array.isArray(st.filteredAircraft) ? st.filteredAircraft : [];
+        return list.filter(a => a && a.hex && a.lat && a.lon);
+    } catch { return []; }
+}
+
+/** Fire the showAllTracks event with the current visible set + interval. */
+function emitShowAllTracks() {
+    document.dispatchEvent(new CustomEvent('showAllTracks', {
+        detail: {
+            aircraft: getVisibleAircraft(),
+            intervalMs: TRACK_INTERVAL_MS[currentTrackInterval],
+            categoryOf: determineAircraftCategory,
+            withHistory: true
+        }
+    }));
+}
+
+function initAllTracksToggle() {
+    const btn = document.getElementById('toggleAllTracks');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+        allTracksOn = !allTracksOn;
+        btn.classList.toggle('active', allTracksOn);
+        btn.setAttribute('aria-pressed', allTracksOn ? 'true' : 'false');
+
+        if (allTracksOn) {
+            btn.classList.add('loading');
+            emitShowAllTracks();
+            // Drop the loading hint once the first (local) draw lands.
+            document.addEventListener('allTracksDrawn', () => btn.classList.remove('loading'), { once: true });
+        } else {
+            document.dispatchEvent(new CustomEvent('clearAllTracks'));
+        }
+    });
+
+    // Keep the overlay in sync with each poll while the toggle is on, so trails
+    // extend and newly-appeared aircraft get their tracks too.
+    document.addEventListener('aircraftDataUpdated', () => {
+        if (allTracksOn) emitShowAllTracks();
+    });
 }
 
 /* ========================================

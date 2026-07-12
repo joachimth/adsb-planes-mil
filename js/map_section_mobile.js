@@ -135,6 +135,59 @@ export function initMap() {
 
         document.addEventListener('clearTrack', () => clearTrack());
 
+        // "All visible tracks" overlay.
+        // detail: { aircraft: [...], intervalMs, categoryOf: fn, withHistory: bool }
+        document.addEventListener('showAllTracks', async (e) => {
+            const { aircraft, intervalMs, categoryOf, withHistory } = e.detail || {};
+            if (!Array.isArray(aircraft) || aircraft.length === 0) {
+                clearAllTracks();
+                return;
+            }
+
+            // Step 1: draw LOCAL tracks for everyone immediately (free, instant).
+            const catFn = typeof categoryOf === 'function' ? categoryOf : () => 'military';
+            const entries = [];
+            for (const ac of aircraft) {
+                if (!ac || !ac.hex) continue;
+                const local = getTrack(ac.hex, intervalMs);
+                entries.push({ hex: ac.hex, points: local, category: catFn(ac) });
+            }
+            drawAllTracks(entries);
+
+            if (!withHistory) return;
+
+            // Step 2: enrich with DB history, but ONLY for aircraft that already
+            // have a local track (they're moving/relevant), capped, and with a
+            // small concurrency limit so we don't hammer the Worker.
+            const hours = intervalMs ? Math.max(0.25, intervalMs / 3600000) : 720;
+            const candidates = entries
+                .filter(en => en.points && en.points.length >= 1)
+                .slice(0, 40); // hard cap on how many we enrich at once
+
+            const byHex = new Map(entries.map(en => [en.hex, en]));
+            const CONCURRENCY = 4;
+            let i = 0;
+            async function worker() {
+                while (i < candidates.length) {
+                    const en = candidates[i++];
+                    try {
+                        const hist = await fetchHistoricalTrack(en.hex, hours);
+                        if (hist && hist.length) {
+                            const merged = mergeTracks(en.points, hist);
+                            const target = byHex.get(en.hex);
+                            if (target) target.points = merged;
+                        }
+                    } catch (_) { /* soft-fail per aircraft */ }
+                }
+            }
+            await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+
+            // Redraw with the enriched tracks (only if the overlay is still on).
+            if (allTracksVisible()) drawAllTracks([...byHex.values()]);
+        });
+
+        document.addEventListener('clearAllTracks', () => clearAllTracks());
+
         console.log("✅ Kort initialiseret.");
 
     } catch (error) {
@@ -391,6 +444,57 @@ export function clearTrack() {
         myMap.removeLayer(trackLayer);
     }
     trackLayer = null;
+}
+
+// ---------------------------------------------------------------------------
+// "All visible tracks" overlay — a separate layer so it does NOT interfere
+// with the single selected-aircraft route (trackLayer).
+// ---------------------------------------------------------------------------
+let allTracksLayer = null;
+
+/**
+ * Draw thin route lines for many aircraft at once.
+ * @param {Array} entries - [{ hex, points:[[lat,lon,alt,tsMs]...], category }]
+ *   Only entries with >= 2 points are drawn.
+ */
+export function drawAllTracks(entries) {
+    if (!myMap) return;
+    clearAllTracks();
+    if (!Array.isArray(entries) || entries.length === 0) return;
+
+    allTracksLayer = L.layerGroup();
+    let drawn = 0;
+
+    for (const entry of entries) {
+        const pts = entry && entry.points;
+        if (!Array.isArray(pts) || pts.length < 2) continue;
+        const color = TRACK_COLORS[entry.category] || TRACK_COLORS.military;
+        const latlngs = pts.map(p => [p[0], p[1]]);
+
+        // Thin, semi-transparent so a crowded map stays readable. No per-point
+        // dots here (would be visual noise across dozens of aircraft) — just a
+        // solid end marker so you can see where each track currently ends.
+        L.polyline(latlngs, { color, weight: 2, opacity: 0.6, lineJoin: 'round' }).addTo(allTracksLayer);
+        const end = pts[pts.length - 1];
+        L.circleMarker([end[0], end[1]], {
+            radius: 3, color, weight: 1, fillColor: color, fillOpacity: 0.9
+        }).addTo(allTracksLayer);
+        drawn++;
+    }
+
+    allTracksLayer.addTo(myMap);
+    document.dispatchEvent(new CustomEvent('allTracksDrawn', { detail: { count: drawn } }));
+}
+
+/** Remove the all-tracks overlay. */
+export function clearAllTracks() {
+    if (allTracksLayer && myMap) myMap.removeLayer(allTracksLayer);
+    allTracksLayer = null;
+}
+
+/** Whether the all-tracks overlay is currently shown. */
+export function allTracksVisible() {
+    return !!allTracksLayer;
 }
 
 /**
