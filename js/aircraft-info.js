@@ -328,6 +328,61 @@ export function getAircraftCategory(type) {
 }
 
 /**
+ * Classify an aircraft into an ICON SHAPE for the map marker.
+ * Combines the ICAO type code (`t`) with the ADS-B emitter category so we can
+ * draw a helicopter / light plane / large airliner / jet appropriately, rather
+ * than one generic plane for everything.
+ *
+ * ADS-B emitter categories (field `category`):
+ *   A1 light · A2 small · A3 large · A4 high-vortex large · A5 heavy
+ *   A6 high-performance · A7 rotorcraft (helicopter)
+ *   B1 glider · B2 balloon · B4 ground obstruction · B6 UAV · B7 spacecraft
+ *
+ * @param {Object} aircraft - raw aircraft object (uses .t and .category)
+ * @returns {'helicopter'|'light'|'heavy'|'jet'|'plane'}
+ */
+export function getAircraftIconShape(aircraft) {
+    if (!aircraft) return 'plane';
+    const t = (aircraft.t || '').toUpperCase();
+    const cat = (aircraft.category || '').toUpperCase();
+
+    // --- Helicopter: emitter cat A7, or type-code heli patterns ---
+    if (cat === 'A7') return 'helicopter';
+    if (t && (
+        t.includes('HELI') || t.includes('H60') ||
+        /^(UH|AH|CH|HH|MH|EH)/.test(t) ||           // military heli prefixes
+        /^EC\d/.test(t) ||                            // Eurocopter EC-series
+        /^(H1|H2|EC3|EC4|EC6|AS3|AS5|B06|B47|R22|R44|R66|A109|A139|A169|A189|S76|S92|MD5)/.test(t)
+    )) return 'helicopter';
+
+    // --- Fighter / high-performance jet: emitter cat A6, or type codes ---
+    if (cat === 'A6') return 'jet';
+    if (t && (
+        /^F(1[456]|A18|35|22)/.test(t) || t.startsWith('EUFI') ||
+        t.includes('GRIPEN') || t.includes('TYPHOON') || t.includes('RAFALE') ||
+        /^(F16|F35|F15|F18|EUFI|GR4|JAS3|MIG|SU2|SU3)/.test(t)
+    )) return 'jet';
+
+    // --- Light / small: emitter cat A1/A2, or small GA type codes ---
+    // (Check light BEFORE heavy so small Cessnas like C172 aren't caught by
+    // military-transport patterns such as C17/C5.)
+    if (cat === 'A1' || cat === 'A2') return 'light';
+    if (t && /^(C1[5-8]\d|C2\d|P28|PA\d|SR2|DA[24]|BE\d|DR40|TBM|DA40)/.test(t)) return 'light';
+
+    // --- Heavy / large airliner: emitter cat A4/A5, or wide-body type codes ---
+    // Military heavies use exact codes (C17 Globemaster, C5 Galaxy) to avoid
+    // clashing with small Cessnas.
+    if (cat === 'A4' || cat === 'A5') return 'heavy';
+    if (t && (
+        /^(A3[456]|A38|B74|B77|B78|B76|IL7|IL9)/.test(t) ||
+        t === 'C17' || t === 'C5' || t === 'C5M' || /^AN[0-9]/.test(t)
+    )) return 'heavy';
+
+    // Default: generic airliner/plane (covers A3 large + unknowns).
+    return 'plane';
+}
+
+/**
  * Clear cache (for testing/debugging)
  */
 export function clearAircraftCache() {

@@ -8,6 +8,7 @@ console.log("✅ map_section_mobile.js er indlæst.");
 import { determineAircraftCategory, openBottomSheet } from './mobile-ui.js';
 import { getSquawkDescription } from './squawk-lookup.js';
 import { getTrack } from './track-store.js';
+import { getAircraftIconShape } from './aircraft-info.js';
 
 // Map state
 let myMap;
@@ -129,6 +130,27 @@ export function initMap() {
  * @param {string} category - Aircraft category (military, emergency, special, civilian)
  * @returns {L.DivIcon} - Leaflet div icon
  */
+// SVG shape library. Every glyph is drawn in a 24×24 box pointing TRUE NORTH
+// (straight up) at 0° rotation, so rotate(track) maps directly to compass
+// heading. Helicopters are the exception: their heading is often noisy/absent,
+// so we draw them upright with a spinning-rotor look and don't rotate them.
+const ICON_SHAPES = {
+    // Generic airliner
+    plane: `<path d="M12 2 L14 12 L22 16 L22 18 L14 15.5 L14 20 L16.5 22 L16.5 23 L12 21.5 L7.5 23 L7.5 22 L10 20 L10 15.5 L2 18 L2 16 L10 12 Z"/>`,
+    // Large / heavy: fuller wings + wider fuselage
+    heavy: `<path d="M12 1.5 L13.5 11 L23 16 L23 18.2 L13.5 15.2 L13.5 20 L16.8 22.2 L16.8 23.3 L12 21.6 L7.2 23.3 L7.2 22.2 L10.5 20 L10.5 15.2 L1 18.2 L1 16 L10.5 11 Z"/>`,
+    // Light / small: short stubby wings
+    light: `<path d="M12 3 L13 11.5 L18 14 L18 15.5 L13 14.2 L13 19 L15 20.5 L15 21.5 L12 20.5 L9 21.5 L9 20.5 L11 19 L11 14.2 L6 15.5 L6 14 L11 11.5 Z"/>`,
+    // Fighter jet: swept delta wings, sharp nose
+    jet: `<path d="M12 1.5 L13 13 L21 20 L21 21.5 L13 18.5 L13 20.5 L14.5 22.5 L14.5 23 L12 22 L9.5 23 L9.5 22.5 L11 20.5 L11 18.5 L3 21.5 L3 20 L11 13 Z"/>`,
+    // Helicopter: fuselage + rotor cross (drawn separately below)
+    helicopter: `<g>
+        <ellipse cx="12" cy="13" rx="3" ry="5.5"/>
+        <rect x="11.3" y="17.5" width="1.4" height="4.5"/>
+        <rect x="9.5" y="21" width="5" height="1.4"/>
+    </g>`
+};
+
 function createAircraftIcon(aircraft, category) {
     // Get aircraft heading (track or heading field)
     const heading = aircraft.track || aircraft.heading || 0;
@@ -142,14 +164,23 @@ function createAircraftIcon(aircraft, category) {
     };
     const color = colors[category] || colors.civilian;
 
-    // Use an inline SVG plane that points TRUE NORTH (straight up) at 0°, so
-    // rotate(track) maps directly to compass heading with no glyph offset.
-    // (The ✈️ emoji has a platform-dependent baseline angle — Apple renders it
-    // pointing north-west — which made the icon point the wrong way vs. the
-    // route. An SVG removes that ambiguity and looks identical on every device.)
+    // Pick the SVG shape from the aircraft's type/emitter category.
+    const shape = getAircraftIconShape(aircraft);
+    const isHeli = shape === 'helicopter';
+    const shapePath = ICON_SHAPES[shape] || ICON_SHAPES.plane;
+
+    // Helicopters get a separate rotor overlay and are NOT track-rotated
+    // (rotorcraft heading is noisy and the rotor reads better upright).
+    const rotorOverlay = isHeli ? `
+        <g stroke="${color}" stroke-width="1.4" stroke-linecap="round" opacity="0.9">
+            <line x1="3" y1="7" x2="21" y2="7"/>
+            <line x1="12" y1="7" x2="12" y2="12"/>
+        </g>` : '';
+    const rotation = isHeli ? 0 : heading;
+
     const html = `
         <div style="
-            transform: rotate(${heading}deg);
+            transform: rotate(${rotation}deg);
             transform-origin: center center;
             width: 28px;
             height: 28px;
@@ -159,9 +190,10 @@ function createAircraftIcon(aircraft, category) {
                 drop-shadow(0 0 8px ${color})
                 drop-shadow(0 2px 4px rgba(0,0,0,0.7));
         ">
-            <svg viewBox="0 0 24 24" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2 L14 12 L22 16 L22 18 L14 15.5 L14 20 L16.5 22 L16.5 23 L12 21.5 L7.5 23 L7.5 22 L10 20 L10 15.5 L2 18 L2 16 L10 12 Z"
-                      fill="${color}" stroke="rgba(0,0,0,0.85)" stroke-width="0.8" stroke-linejoin="round"/>
+            <svg viewBox="0 0 24 24" width="28" height="28" xmlns="http://www.w3.org/2000/svg"
+                 fill="${color}" stroke="rgba(0,0,0,0.85)" stroke-width="0.8" stroke-linejoin="round">
+                ${shapePath}
+                ${rotorOverlay}
             </svg>
         </div>
     `;
