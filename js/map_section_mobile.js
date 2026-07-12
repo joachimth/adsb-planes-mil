@@ -113,17 +113,16 @@ export function initMap() {
             const localPoints = getTrack(hex, intervalMs);
 
             // Step 2: Try fetching historical track from the proxy (if configured).
-            // The proxy returns positions older than ~now - intervalMs, filling
-            // gaps the local buffer couldn't catch (e.g. flights before the app
-            // was open). For "all" time (no interval), fetch the last 6 hours
-            // to keep it snappy.
+            // The Worker stores its own multi-day history in D1; this fills gaps
+            // the local buffer couldn't catch (flights before the app was open).
+            // Convert the selected interval to hours. "All" (no interval) pulls
+            // the full retained window (720h = 30 days).
             let historyPoints = [];
             if (hex) {
-                const ageS = intervalMs
-                    ? Math.max(300, Math.round(intervalMs / 1000))
-                    : 6 * 3600; // default: last 6h for "all"
-                const lookbackS = Math.floor(Date.now() / 1000) - ageS;
-                historyPoints = await fetchHistoricalTrack(hex, lookbackS);
+                const hours = intervalMs
+                    ? Math.max(0.25, intervalMs / 3600000)
+                    : 720; // "all" = full 30-day retention
+                historyPoints = await fetchHistoricalTrack(hex, hours);
             }
 
             // Step 3: Merge local + history, dedup by timestamp

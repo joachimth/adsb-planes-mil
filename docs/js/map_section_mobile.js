@@ -7,8 +7,9 @@ console.log("✅ map_section_mobile.js er indlæst.");
 
 import { determineAircraftCategory, openBottomSheet } from './mobile-ui.js';
 import { getSquawkDescription } from './squawk-lookup.js';
-import { getTrack } from './track-store.js';
+import { getTrack, recordPositions } from './track-store.js';
 import { getAircraftIconShape } from './aircraft-info.js';
+import { fetchHistoricalTrack, mergeTracks } from './history-proxy.js';
 
 // Map state
 let myMap;
@@ -105,12 +106,30 @@ export function initMap() {
 
         // Flight-route events (dispatched from the bottom sheet / mobile-ui).
         // detail: { hex, category, intervalMs, fit }
-        document.addEventListener('showTrack', (e) => {
+        document.addEventListener('showTrack', async (e) => {
             const { hex, category, intervalMs, fit } = e.detail || {};
-            const points = getTrack(hex, intervalMs);
+
+            // Step 1: Get local track-store points (always available)
+            const localPoints = getTrack(hex, intervalMs);
+
+            // Step 2: Try fetching historical track from the proxy (if configured).
+            // The Worker stores its own multi-day history in D1; this fills gaps
+            // the local buffer couldn't catch (flights before the app was open).
+            // Convert the selected interval to hours. "All" (no interval) pulls
+            // the full retained window (720h = 30 days).
+            let historyPoints = [];
+            if (hex) {
+                const hours = intervalMs
+                    ? Math.max(0.25, intervalMs / 3600000)
+                    : 720; // "all" = full 30-day retention
+                historyPoints = await fetchHistoricalTrack(hex, hours);
+            }
+
+            // Step 3: Merge local + history, dedup by timestamp
+            const points = mergeTracks(localPoints, historyPoints);
             drawTrack(points, category, { fit: !!fit });
             document.dispatchEvent(new CustomEvent('trackDrawn', {
-                detail: { hex, count: points.length }
+                detail: { hex, count: points.length, historyCount: historyPoints.length }
             }));
         });
 
